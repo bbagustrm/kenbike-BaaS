@@ -13,10 +13,11 @@ jobs:
   check:
     runs-on: ubuntu-latest
     env:
-      # Nilai dummy agar validasi env lolos saat build; bukan kredensial nyata.
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
-      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-dummy-anon-key
+      # Build mem-prerender katalog ("use cache") sehingga butuh project Supabase
+      # sungguhan. Hanya kunci publik (anon) — aman, sama dengan yang dikirim ke browser.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       NEXT_TELEMETRY_DISABLED: 1
     steps:
       - uses: actions/checkout@v4
