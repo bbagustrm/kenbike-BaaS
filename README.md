@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KenBike
 
-## Getting Started
+E-commerce sepeda & aksesoris berbasis **Next.js 16** (App Router) dengan **Supabase** sebagai backend (Postgres, Auth, Storage, RLS, RPC). Pembayaran via **Midtrans Snap**, pengiriman via **Biteship**.
 
-First, run the development server:
+Satu aplikasi: UI, Server Actions, dan webhook berada di repo ini — tidak ada backend terpisah.
+
+## Dokumentasi
+
+| Dokumen                                                    | Isi                                                            |
+| ---------------------------------------------------------- | -------------------------------------------------------------- |
+| [docs/PRD.md](docs/PRD.md)                                 | Scope MVP, alur checkout, model stok, state machine order      |
+| [docs/ERD-ecommerce.dbml](docs/ERD-ecommerce.dbml)         | Skema database (paste ke [dbdiagram.io](https://dbdiagram.io)) |
+| [docs/RLS-POLICIES.md](docs/RLS-POLICIES.md)               | Row Level Security & RPC per tabel                             |
+| [docs/FE-STRUCTURE-FOLDER.md](docs/FE-STRUCTURE-FOLDER.md) | Struktur folder, pola data & caching                           |
+| [docs/ROADMAP.md](docs/ROADMAP.md)                         | Urutan kerja per milestone                                     |
+
+Status pekerjaan: [GitHub Project](https://github.com/users/bbagustrm/projects/11).
+
+## Tech Stack
+
+Next.js 16.4 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (`@supabase/ssr`) · Zod · React Hook Form · Zustand · Sonner · Vitest · bun
+
+## Setup Lokal
+
+Prasyarat: [bun](https://bun.sh) ≥ 1.3, Node ≥ 20, Docker Desktop (untuk Supabase lokal, mulai M1).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
+cp .env.example .env.local   # lalu isi nilainya
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script                            | Fungsi                 |
+| --------------------------------- | ---------------------- |
+| `bun dev`                         | Development server     |
+| `bun run build`                   | Build produksi         |
+| `bun run lint`                    | ESLint                 |
+| `bun run typecheck`               | Pemeriksaan TypeScript |
+| `bun run test`                    | Unit test (Vitest)     |
+| `bun run format` / `format:check` | Prettier               |
 
-## Learn More
+## Konvensi Kontribusi
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Branch:** `<type>/<issue>-<slug>`, mis. `feat/31-create-order-rpc`, `chore/m0-foundation`.
+- **Commit:** [Conventional Commits](https://www.conventionalcommits.org/) — `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`; sertakan nomor issue (`(#12)`).
+- **PR:** satu PR menutup issue terkait (`Closes #12`), wajib CI hijau sebelum merge.
+- **Next.js 16** punya breaking changes — baca `node_modules/next/dist/docs/` sebelum memakai API Next (lihat [AGENTS.md](AGENTS.md)).

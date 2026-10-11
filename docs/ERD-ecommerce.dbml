@@ -1,0 +1,444 @@
+// ============================================
+// ERD — KenBike E-Commerce (v3, Supabase/PostgreSQL)
+// Paste ke https://dbdiagram.io untuk visualisasi
+// Migrasi: Supabase CLI (supabase/migrations/*.sql) — BUKAN Flyway
+// Uang: bigint, satuan rupiah utuh (tanpa desimal). Midtrans butuh integer.
+// ============================================
+
+// ------------------------------------------
+// ENUM (di Postgres: CREATE TYPE ... AS ENUM)
+// ------------------------------------------
+
+Enum user_role {
+  customer
+  admin
+}
+
+Enum attention_reason {
+  late_payment_out_of_stock  // bayar masuk setelah expired & stok tidak cukup -> refund manual
+  shipment_create_failed     // order paid tapi create order Biteship gagal -> retry manual
+  amount_mismatch            // gross_amount webhook != payments.amount
+  duplicate_payment          // dua attempt sama-sama settlement -> refund manual salah satunya
+}
+
+Enum payment_status {
+  pending_payment
+  paid
+  expired
+  failed
+  cancelled
+  refunded
+}
+
+Enum shipping_status {
+  pending      // Biteship order belum dibuat / menunggu pickup
+  processing   // Biteship order dibuat, kurir dialokasikan
+  shipped      // Sudah dipickup, dalam perjalanan
+  delivered
+  returned
+  cancelled
+}
+
+Enum payment_attempt_status {
+  pending
+  settlement
+  capture
+  deny
+  cancel
+  expire
+  failure
+  refund
+}
+
+Enum reservation_status {
+  reserved
+  confirmed
+  released
+}
+
+// ------------------------------------------
+// AUTH & PROFILE
+// ------------------------------------------
+
+Table auth_users {
+  id uuid [pk, note: 'Dikelola Supabase Auth, TIDAK dimigrasi manual']
+}
+
+Table profiles {
+  id uuid [pk, ref: - auth_users.id, note: 'ON DELETE CASCADE. Dibuat otomatis oleh trigger handle_new_user() saat signup (email/password maupun Google OAuth)']
+  full_name text [note: 'Diisi awal dari raw_user_meta_data (full_name/name dari Google) — hanya untuk tampilan, BUKAN otorisasi']
+  avatar_url text [note: 'Dari Google OAuth (picture), nullable']
+  role user_role [not null, default: 'customer', note: 'Tidak boleh diubah user sendiri (lihat RLS-POLICIES.md). Admin pertama di-set manual via SQL Editor']
+  phone text
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    role
+  }
+}
+
+Table addresses {
+  id uuid [pk, default: `gen_random_uuid()`]
+  profile_id uuid [not null, ref: > profiles.id, note: 'ON DELETE CASCADE']
+  label varchar(50) [note: 'Rumah, Kantor, dll — teks bebas']
+  recipient_name text [not null]
+  phone text [not null]
+  address_line text [not null]
+  district text [note: 'Kecamatan']
+  city text [not null]
+  province text [not null]
+  postal_code varchar(10) [not null]
+  biteship_area_id varchar(100) [note: 'Hasil pencarian area Biteship (maps API). Dipakai untuk cek ongkir & create order']
+  latitude numeric(10,7)
+  longitude numeric(10,7)
+  note text [note: 'Catatan untuk kurir, mis. "deket pintu masuk". Dikirim ke Biteship sbg destination_note']
+  is_default boolean [not null, default: false, note: 'Unique partial index: satu default per profile']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    profile_id
+    (profile_id, is_default) [name: 'idx_addresses_default']
+  }
+}
+
+// Alamat toko/gudang sebagai origin pengiriman Biteship. Cukup 1 baris aktif.
+Table store_settings {
+  id uuid [pk, default: `gen_random_uuid()`]
+  store_name text [not null]
+  contact_name text [not null]
+  phone text [not null]
+  address_line text [not null]
+  city text [not null]
+  province text [not null]
+  postal_code varchar(10) [not null]
+  biteship_area_id varchar(100) [not null]
+  latitude numeric(10,7)
+  longitude numeric(10,7)
+  note text [note: 'Dikirim sbg origin_note']
+  is_active boolean [not null, default: true, note: 'Partial unique index: hanya satu baris is_active = true']
+  updated_at timestamptz [default: `now()`]
+}
+
+// ------------------------------------------
+// KATALOG PRODUK — dengan varian dinamis
+// ------------------------------------------
+
+Table categories {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name text [not null]
+  slug varchar(100) [unique, not null]
+  parent_id uuid [ref: > categories.id, note: 'Self-reference, nullable. ON DELETE SET NULL / RESTRICT']
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    parent_id
+  }
+}
+
+Table products {
+  id uuid [pk, default: `gen_random_uuid()`]
+  category_id uuid [ref: > categories.id, note: 'ON DELETE RESTRICT']
+  name text [not null]
+  slug varchar(150) [unique, not null]
+  description text
+  is_active boolean [not null, default: true, note: 'Soft delete. JANGAN hard delete produk yang pernah dipesan']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  note: 'Info umum produk. Harga/stok/SKU ada di product_variants. Setiap produk WAJIB punya minimal 1 varian (ditegakkan oleh RPC admin_create_product, bukan hanya konvensi). Index pencarian: GIN trigram (pg_trgm) pada name.'
+
+  indexes {
+    category_id
+    is_active
+  }
+}
+
+// Nama atribut varian, dinamis oleh admin: "Warna", "Ukuran"
+Table product_options {
+  id uuid [pk, default: `gen_random_uuid()`]
+  product_id uuid [not null, ref: > products.id, note: 'ON DELETE CASCADE']
+  name varchar(50) [not null, note: 'Contoh: Warna, Ukuran']
+  sort_order int [default: 0]
+
+  indexes {
+    product_id
+    (product_id, name) [unique]
+  }
+}
+
+Table product_option_values {
+  id uuid [pk, default: `gen_random_uuid()`]
+  option_id uuid [not null, ref: > product_options.id, note: 'ON DELETE CASCADE']
+  value varchar(50) [not null, note: 'Contoh: Merah, M, L']
+  sort_order int [default: 0]
+
+  indexes {
+    option_id
+    (option_id, value) [unique]
+  }
+}
+
+// Kombinasi spesifik dengan harga/stok/SKU sendiri
+Table product_variants {
+  id uuid [pk, default: `gen_random_uuid()`]
+  product_id uuid [not null, ref: > products.id, note: 'ON DELETE RESTRICT (order_items mereferensi varian)']
+  sku varchar(50) [unique, not null]
+  price bigint [not null, note: 'CHECK (price >= 0). Rupiah utuh']
+  quantity int [not null, default: 0, note: 'Stok FISIK. CHECK (quantity >= 0). TIDAK bisa dibaca publik (column grant). Stok tersedia dibaca lewat RPC get_variant_availability()']
+  weight_gram int [not null, note: 'CHECK > 0']
+  length_cm int [not null, note: 'CHECK > 0. Biteship pakai berat volumetrik']
+  width_cm int [not null]
+  height_cm int [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  note: 'Concurrency stok ditangani di RPC dengan SELECT ... FOR UPDATE (bukan kolom version/optimistic locking).'
+
+  indexes {
+    product_id
+    is_active
+  }
+}
+
+Table product_variant_options {
+  variant_id uuid [not null, ref: > product_variants.id, note: 'ON DELETE CASCADE']
+  option_value_id uuid [not null, ref: > product_option_values.id, note: 'ON DELETE CASCADE']
+
+  indexes {
+    (variant_id, option_value_id) [pk]
+    option_value_id
+  }
+}
+
+Table product_images {
+  id uuid [pk, default: `gen_random_uuid()`]
+  product_id uuid [not null, ref: > products.id, note: 'ON DELETE CASCADE']
+  variant_id uuid [ref: > product_variants.id, note: 'Nullable — null = gambar level produk. ON DELETE SET NULL']
+  storage_path text [not null, note: 'Path di Supabase Storage bucket product-images (URL publik diturunkan di app)']
+  alt_text text
+  sort_order int [default: 0]
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    product_id
+    variant_id
+  }
+}
+
+// ------------------------------------------
+// CART (hanya user login; guest di localStorage/Zustand, di-merge saat login)
+// ------------------------------------------
+
+Table carts {
+  id uuid [pk, default: `gen_random_uuid()`]
+  profile_id uuid [unique, not null, ref: > profiles.id, note: 'ON DELETE CASCADE. Satu profile = satu cart']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table cart_items {
+  id uuid [pk, default: `gen_random_uuid()`]
+  cart_id uuid [not null, ref: > carts.id, note: 'ON DELETE CASCADE']
+  variant_id uuid [not null, ref: > product_variants.id]
+  quantity int [not null, note: 'CHECK (quantity > 0)']
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    (cart_id, variant_id) [unique, name: 'idx_cart_item_unique']
+  }
+}
+
+// ------------------------------------------
+// ORDER & TRANSAKSI
+// ------------------------------------------
+
+Table orders {
+  id uuid [pk, default: `gen_random_uuid()`]
+  order_number varchar(30) [unique, not null, note: 'Mudah dibaca, mis. KB-20261011-0001 (dari sequence)']
+  profile_id uuid [not null, ref: > profiles.id, note: 'ON DELETE RESTRICT']
+  subtotal bigint [not null, note: 'SUM(order_items.price_at_purchase * quantity)']
+  shipping_cost bigint [not null, default: 0]
+  total_amount bigint [not null, note: 'CHECK (total_amount = subtotal + shipping_cost)']
+  payment_status payment_status [not null, default: 'pending_payment']
+  shipping_status shipping_status [note: 'Null sebelum paid']
+  courier_code varchar(50) [not null, note: 'Dipilih saat checkout, mis. jne']
+  courier_service varchar(50) [not null, note: 'Mis. reg, yes']
+  shipping_address_snapshot jsonb [not null, note: 'Snapshot alamat tujuan SAAT order dibuat (incl. biteship_area_id & note). addresses boleh diedit/dihapus setelahnya']
+  customer_note text
+  expires_at timestamptz [not null, note: 'created_at + 24 jam. Sama dgn expires_at reservasi stok. TIDAK di-reset saat retry bayar']
+  attention_reason attention_reason [note: 'Nullable. Terisi = order butuh tindakan admin (dashboard "perlu tindakan")']
+  paid_at timestamptz
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  note: 'Tidak ada FK ke addresses — alamat disnapshot. Referensi gateway ada di payments. Cart user dikosongkan di dalam create_order.'
+
+  indexes {
+    profile_id
+    payment_status
+    shipping_status
+    created_at
+    (payment_status, expires_at) [name: 'idx_orders_expiry', note: 'Untuk job expire (partial: payment_status = pending_payment)']
+    attention_reason [name: 'idx_orders_attention', note: 'Partial: WHERE attention_reason IS NOT NULL']
+  }
+}
+
+// Satu order bisa punya banyak percobaan bayar (retry setelah expired)
+Table payments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  order_id uuid [not null, ref: > orders.id, note: 'ON DELETE RESTRICT']
+  gateway varchar(20) [not null, default: 'midtrans']
+  gateway_order_id varchar(100) [unique, not null, note: 'order_id yang DIKIRIM ke Midtrans. WAJIB unik per attempt, mis. KB-...-1, KB-...-2']
+  gateway_transaction_id varchar(100) [note: 'transaction_id dari Midtrans, null sampai user memilih metode bayar']
+  snap_token text
+  payment_type varchar(30) [note: 'bank_transfer | credit_card | gopay | qris, dst']
+  payment_channel varchar(30) [note: 'bca, bni, bri, permata, dst']
+  amount bigint [not null]
+  status payment_attempt_status [not null, default: 'pending', note: 'Maks. SATU attempt pending per order (partial unique index). Attempt lama dibatalkan via Midtrans cancel API sebelum membuat yang baru']
+  expires_at timestamptz [not null, note: 'Expiry Snap = MIN(now() + 23j45m, orders.expires_at - 15 menit)']
+  raw_response jsonb [note: 'Notifikasi mentah terakhir dari gateway']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    order_id
+    gateway_transaction_id [unique]
+    (gateway, payment_type)
+    order_id [unique, name: 'uq_payments_one_pending', note: 'Partial: WHERE status = pending']
+  }
+}
+
+Table order_items {
+  id uuid [pk, default: `gen_random_uuid()`]
+  order_id uuid [not null, ref: > orders.id, note: 'ON DELETE CASCADE']
+  variant_id uuid [not null, ref: > product_variants.id, note: 'ON DELETE RESTRICT']
+  quantity int [not null, note: 'CHECK (quantity > 0)']
+  price_at_purchase bigint [not null]
+  weight_gram_snapshot int [not null, note: 'Untuk hitung ulang/kirim ke Biteship']
+  product_name_snapshot text [not null]
+  variant_label_snapshot text [note: 'Mis. "Merah - M"']
+  image_url_snapshot text
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    order_id
+    variant_id
+  }
+}
+
+Table stock_reservations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  variant_id uuid [not null, ref: > product_variants.id]
+  order_id uuid [not null, ref: > orders.id, note: 'ON DELETE CASCADE']
+  quantity int [not null, note: 'CHECK (quantity > 0)']
+  status reservation_status [not null, default: 'reserved']
+  expires_at timestamptz [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  note: 'Siklus: reserved (saat order dibuat, stok fisik belum berkurang) -> confirmed (saat paid: quantity varian dikurangi) | released (expired/cancel/gagal). Cleanup oleh pg_cron.'
+
+  indexes {
+    (status, expires_at) [name: 'idx_stock_res_cleanup', note: 'Partial: WHERE status = reserved']
+    order_id
+    variant_id
+  }
+}
+
+Table order_status_history {
+  id uuid [pk, default: `gen_random_uuid()`]
+  order_id uuid [not null, ref: > orders.id, note: 'ON DELETE CASCADE']
+  status_type varchar(20) [not null, note: 'payment | shipping']
+  status_value varchar(30) [not null, note: 'Nilai mentah provider, mis. settlement, picking_up']
+  source varchar(20) [not null, note: 'midtrans | biteship | system']
+  event_key varchar(150) [not null, note: 'Kunci idempotensi, mis. "<transaction_id>:<status>:<status_updated_at>" atau "<biteship_event_id>"']
+  raw_payload jsonb
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    (order_id, created_at) [name: 'idx_status_history_timeline']
+    (source, event_key) [unique, name: 'uq_status_history_event', note: 'Webhook duplikat -> INSERT ... ON CONFLICT DO NOTHING']
+  }
+}
+
+// Catatan internal admin — terpisah dari log webhook
+Table order_internal_notes {
+  id uuid [pk, default: `gen_random_uuid()`]
+  order_id uuid [not null, ref: > orders.id, note: 'ON DELETE CASCADE']
+  admin_id uuid [not null, ref: > profiles.id]
+  note text [not null]
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    order_id
+  }
+}
+
+// ------------------------------------------
+// SHIPPING DETAIL
+// ------------------------------------------
+
+Table shipments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  order_id uuid [unique, not null, ref: - orders.id, note: 'Satu order = satu shipment. ON DELETE RESTRICT']
+  biteship_order_id varchar(100) [unique]
+  courier_code varchar(50)
+  courier_service varchar(50)
+  waybill_id varchar(100) [note: 'Nomor resi']
+  origin_address_snapshot jsonb [not null, note: 'Snapshot dari store_settings saat shipment dibuat']
+  destination_address_snapshot jsonb [not null, note: 'Salinan orders.shipping_address_snapshot']
+  estimated_delivery_date date
+  actual_delivery_date timestamptz
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  note: 'Status pengiriman TIDAK diduplikasi di sini: sumber kebenaran = orders.shipping_status. Timeline/checkpoint = order_status_history (status_type = shipping).'
+
+  indexes {
+    waybill_id
+  }
+}
+
+// ============================================
+// CATATAN DESAIN
+// ============================================
+// 1. Setiap products WAJIB punya >= 1 product_variants (varian "Default" bila
+//    tanpa opsi). Ditegakkan lewat RPC admin_create_product (insert produk +
+//    varian dalam satu transaksi). cart_items, order_items, stock_reservations
+//    semua mereferensi variant_id.
+// 2. MODEL STOK (reservasi):
+//    - Stok tersedia = product_variants.quantity - SUM(reservasi 'reserved' & expires_at > now()).
+//      Publik membacanya via RPC get_variant_availability(variant_ids) — kolom
+//      quantity & tabel stock_reservations tidak terbuka untuk customer.
+//    - create_order RPC (HANYA service_role): SELECT ... FOR UPDATE varian, cek
+//      tersedia, insert orders + order_items + stock_reservations (reserved),
+//      kosongkan cart user. quantity fisik belum berkurang.
+//    - Paid (webhook): reservasi -> confirmed, product_variants.quantity -= qty.
+//    - Expired/cancel: reservasi -> released.
+//    - pg_cron tiap menit: release reservasi reserved yang expires_at < now()
+//      dan set orders.payment_status = 'expired'.
+//    - EXPIRY: order 24 jam; Snap expiry = order expiry - 15 menit (buffer
+//      webhook telat). Retry bayar TIDAK memperpanjang orders.expires_at.
+//    - BAYAR TELAT (settlement datang untuk order 'expired'): coba reserve ulang
+//      stok -> cukup: proses normal (paid); tidak cukup: payment_status = paid,
+//      attention_reason = late_payment_out_of_stock (refund manual oleh admin).
+// 3. Snapshot: order_items (harga, nama, label, berat, gambar) dan
+//    orders.shipping_address_snapshot sengaja denormalisasi supaya riwayat
+//    akurat walau produk/alamat berubah.
+// 4. Guest cart di localStorage/Zustand; checkout WAJIB login; cart lokal
+//    di-merge ke carts/cart_items saat login (RPC merge_guest_cart).
+// 5. payments terpisah dari orders: banyak attempt per order, tidak terikat
+//    satu gateway. gateway_order_id wajib unik per attempt karena Midtrans
+//    menolak order_id duplikat.
+// 6. Dimensi varian (P x L x T) wajib karena Biteship pakai berat volumetrik —
+//    penting untuk sepeda.
+// 7. Idempotensi webhook: INSERT order_status_history ... ON CONFLICT
+//    (source, event_key) DO NOTHING; bila 0 row ter-insert, webhook sudah
+//    diproses -> balas 200 tanpa efek samping.
+// 8. updated_at diisi trigger set_updated_at() di semua tabel yang punya kolom ini.
+// 9. State machine order: lihat PRD.md bagian 3.5.
+// 10. Pencarian katalog: extension pg_trgm + GIN index pada products.name.
+// 11. Di luar MVP (belum ada tabel): review, voucher/kupon, wishlist, refund detail.
