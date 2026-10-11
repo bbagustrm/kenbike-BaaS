@@ -449,7 +449,7 @@ Table shipments {
 //    orders.shipping_address_snapshot sengaja denormalisasi supaya riwayat
 //    akurat walau produk/alamat berubah.
 // 4. Guest cart di localStorage/Zustand; checkout WAJIB login; cart lokal
-//    di-merge ke carts/cart_items saat login (RPC merge_guest_cart).
+//    dipindahkan ke carts/cart_items saat login bila cart akun kosong (RPC merge_guest_cart).
 // 5. payments terpisah dari orders: banyak attempt per order, tidak terikat
 //    satu gateway. gateway_order_id wajib unik per attempt karena Midtrans
 //    menolak order_id duplikat.

@@ -1,4 +1,4 @@
-import { SearchIcon, ShoppingCartIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import Form from "next/form";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -7,7 +7,9 @@ import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CartButton } from "@/features/cart";
 
+import { CartSession } from "./cart-session";
 import { Container } from "./container";
 import { MobileNav } from "./mobile-nav";
 import { NAV_LINKS } from "./nav-links";
@@ -52,13 +54,10 @@ export function Navbar() {
 
         <div className="ml-auto flex items-center gap-1 sm:ml-0">
           <ThemeToggle />
-          <Link
-            href="/cart"
-            aria-label="Keranjang"
-            className={buttonVariants({ variant: "ghost", size: "icon" })}
-          >
-            <ShoppingCartIcon />
-          </Link>
+          <CartButton />
+          <Suspense fallback={null}>
+            <CartSession />
+          </Suspense>
           {/* Membaca session per request → wajib di dalam Suspense (Cache Components). */}
           <Suspense fallback={<Skeleton className="size-8 rounded-full" />}>
             <UserSlot />

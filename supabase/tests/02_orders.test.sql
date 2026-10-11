@@ -216,10 +216,16 @@ select pg_temp.eq('cancel: stok tersedia kembali', pg_temp.avail(), 2);
 select pg_temp.login('00000000-0000-0000-0000-00000000000b');
 set local role authenticated;
 delete from public.cart_items;
-select pg_temp.lives('merge_guest_cart: berjalan',
-  format($$ select public.merge_guest_cart('[{"variant_id":"%s","quantity":5},{"variant_id":"%s","quantity":1}]') $$,
-         pg_temp.ctx('v'), gen_random_uuid()));
+select pg_temp.eq('merge_guest_cart: cart DB kosong → cart guest dipindahkan',
+  public.merge_guest_cart(format('[{"variant_id":"%s","quantity":5},{"variant_id":"%s","quantity":1}]',
+                                 pg_temp.ctx('v'), gen_random_uuid())::jsonb),
+  'adopted');
 select pg_temp.eq('merge_guest_cart: dibatasi stok tersedia, varian tak dikenal diabaikan',
+  (select sum(quantity) from public.cart_items), 2::bigint);
+select pg_temp.eq('merge_guest_cart: cart DB berisi → cart DB dipertahankan',
+  public.merge_guest_cart(format('[{"variant_id":"%s","quantity":1}]', pg_temp.ctx('v'))::jsonb),
+  'kept');
+select pg_temp.eq('merge_guest_cart: cart guest tidak ditambahkan saat kept',
   (select sum(quantity) from public.cart_items), 2::bigint);
 select pg_temp.throws('merge_guest_cart: payload harus array',
   $$ select public.merge_guest_cart('{"a":1}') $$, '22023');
