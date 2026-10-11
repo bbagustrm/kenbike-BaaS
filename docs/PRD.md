@@ -74,7 +74,8 @@
 - **Login:** tabel `carts`/`cart_items`. Saat login, RPC `merge_guest_cart` menerapkan aturan **"pakai salah satu"**: bila cart di akun **sudah berisi**, cart akun yang dipakai dan cart lokal dibuang; bila cart akun **kosong**, isi cart lokal dipindahkan ke DB. Setelah itu cart lokal selalu dikosongkan (setelah logout keranjang mulai dari kosong).
 - Jumlah per varian maks. 10 dan dibatasi stok tersedia; maks. 50 jenis varian per keranjang.
 - Harga **tidak pernah** dipercaya dari client; selalu diambil dari DB saat checkout.
-- **Checkout wajib login.**
+- **Syarat checkout: login + punya alamat kirim.** Tombol "Checkout" di keranjang → `/checkout`; tamu diarahkan ke login, user tanpa alamat (dengan area Biteship) diarahkan ke `/account/addresses?next=/checkout` lalu kembali otomatis setelah alamat pertama tersimpan.
+- **Buku alamat:** banyak alamat per user (maks. 20), tepat satu alamat utama (dipilih otomatis di checkout; bisa diganti di M6). Aturan utama/batas dijaga trigger DB.
 - **Cart dikosongkan saat order dibuat** (di dalam `create_order`). Jika order expired/dibatalkan, user belanja ulang (opsional nanti: tombol "beli lagi" dari detail order).
 
 ### 3.4 Manajemen Stok (model reservasi)

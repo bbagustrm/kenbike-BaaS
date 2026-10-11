@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { phoneSchema } from "./schemas";
+import { phoneSchema, requiredPhoneSchema } from "./phone";
 
 describe("phoneSchema", () => {
   it.each([
@@ -17,5 +17,13 @@ describe("phoneSchema", () => {
 
   it.each(["123", "08abc", "+62 812 3456 7890 1234 5"])("menolak %s", (input) => {
     expect(phoneSchema.safeParse(input).success).toBe(false);
+  });
+});
+
+describe("requiredPhoneSchema", () => {
+  it("wajib diisi dan dinormalkan", () => {
+    expect(requiredPhoneSchema.parse("0812 3456 7890")).toBe("081234567890");
+    expect(requiredPhoneSchema.safeParse(" ").success).toBe(false);
+    expect(requiredPhoneSchema.safeParse("123").success).toBe(false);
   });
 });

@@ -24,3 +24,15 @@ export function formDataToObject(formData: FormData): Record<string, string> {
   }
   return out;
 }
+
+/**
+ * Teks opsional: kosong → null. Menerima null juga, karena form client
+ * mengirim hasil parse (output) yang lalu di-parse ulang di Server Action.
+ */
+export const optionalText = (max: number, label: string) =>
+  z
+    .string()
+    .trim()
+    .max(max, { error: `${label} maksimal ${max} karakter` })
+    .nullish()
+    .transform((v) => v || null);

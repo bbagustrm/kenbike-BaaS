@@ -36,6 +36,19 @@ export const biteshipEnv = lazyEnv(
   "Biteship",
   z.object({
     BITESHIP_API_KEY: z.string().min(1),
-    BITESHIP_WEBHOOK_SECRET: z.string().min(1),
+    /** Kode kurir yang ditawarkan, dipisah koma (lihat dokumentasi Biteship). */
+    BITESHIP_COURIERS: z.preprocess(
+      (v) => (v === "" ? undefined : v),
+      z
+        .string()
+        .regex(/^[a-z_]+(,[a-z_]+)*$/)
+        .default("jne,jnt,sicepat,anteraja"),
+    ),
   }),
+);
+
+/** Dipisah dari biteshipEnv: hanya dibutuhkan webhook (M7). */
+export const biteshipWebhookEnv = lazyEnv(
+  "Biteship webhook",
+  z.object({ BITESHIP_WEBHOOK_SECRET: z.string().min(1) }),
 );

@@ -84,9 +84,10 @@ kenbike-baas/
 │   │   ├── queries.ts
 │   │   └── index.ts
 │   ├── address/
-│   │   ├── components/             # AddressForm (incl. cari area Biteship), AddressList
-│   │   ├── actions.ts
-│   │   ├── queries.ts
+│   │   ├── components/             # AddressBook, AddressFormDialog, AreaPicker (cari area Biteship)
+│   │   ├── actions.ts              # searchAreas, saveAddress, setDefaultAddress, deleteAddress
+│   │   ├── queries.ts              # server-only: listMyAddresses, hasShippableAddress
+│   │   ├── schemas.ts
 │   │   └── index.ts
 │   ├── checkout/
 │   │   ├── components/             # ShippingOptions, OrderSummary, PayButton (Snap)
@@ -122,7 +123,7 @@ kenbike-baas/
 │   │   ├── admin.ts                # service role — `import "server-only"`
 │   │   └── proxy.ts                # helper updateSession() dipanggil dari /proxy.ts
 │   ├── midtrans/                   # server-only: createSnapToken, verifySignature, mapStatus
-│   ├── biteship/                   # server-only: rates, createOrder, searchArea, mapStatus
+│   ├── biteship/                   # client.ts (server-only: searchAreas, getRates), mapping.ts (murni + test), schemas.ts, types.ts
 │   ├── env/                        # public.ts (NEXT_PUBLIC_*) & server.ts (server-only, divalidasi per integrasi)
 │   ├── format.ts                   # formatRupiah, tanggal
 │   ├── product-images.ts           # URL Storage & pemilihan foto utama (dipakai katalog, cart, admin)
