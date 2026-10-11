@@ -1,14 +1,15 @@
 "use client";
 
-import { SlidersHorizontalIcon } from "lucide-react";
+import { SlidersHorizontalIcon, XIcon } from "lucide-react";
+import Link from "next/link";
 import Form from "next/form";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 
-import { type ProductListParams, SORT_OPTIONS } from "../search-params";
+import { type ProductListParams, SORT_OPTIONS, productListHref } from "../search-params";
 import type { Category } from "../types";
 
 /**
@@ -24,6 +25,11 @@ export function CatalogFilters({
   categories: Category[];
 }) {
   const roots = categories.filter((c) => !c.parentId);
+  const hasFilters =
+    Boolean(params.category) ||
+    params.min !== undefined ||
+    params.max !== undefined ||
+    params.sort !== "newest";
 
   return (
     <Form
@@ -89,10 +95,22 @@ export function CatalogFilters({
           ))}
         </NativeSelect>
       </Field>
-      <Button type="submit" variant="outline">
-        <SlidersHorizontalIcon />
-        Terapkan
-      </Button>
+      <div className="col-span-2 flex gap-2 lg:col-span-1">
+        <Button type="submit" className="flex-1 lg:flex-none">
+          <SlidersHorizontalIcon />
+          Terapkan filter
+        </Button>
+        {hasFilters && (
+          <Link
+            href={productListHref({ q: params.q })}
+            className={buttonVariants({ variant: "ghost" })}
+            aria-label="Hapus semua filter"
+          >
+            <XIcon />
+            Reset
+          </Link>
+        )}
+      </div>
     </Form>
   );
 }

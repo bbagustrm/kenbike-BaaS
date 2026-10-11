@@ -1,6 +1,6 @@
 "use client";
 
-import { MinusIcon, PlusIcon, ShoppingCartIcon } from "lucide-react";
+import { ClockIcon, MinusIcon, PlusIcon, ShoppingCartIcon } from "lucide-react";
 import { Suspense, use, useMemo, useState } from "react";
 
 import { Price } from "@/components/shared/price";
@@ -43,6 +43,20 @@ export function ProductView({ product, availabilityPromise }: ProductViewProps) 
           </p>
           {variant && <p className="text-xs text-muted-foreground">SKU: {variant.sku}</p>}
         </div>
+
+        {product.preorderDays !== null && (
+          <div className="flex gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+            <ClockIcon
+              className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
+              aria-hidden="true"
+            />
+            <p>
+              <strong>Pre-order</strong> · barang siap dikirim sekitar{" "}
+              <strong>{product.preorderDays} hari</strong> setelah pembayaran, lebih lama dari
+              pengiriman biasa.
+            </p>
+          </div>
+        )}
 
         <Suspense fallback={<PurchaseSkeleton options={product.options.length} />}>
           <PurchaseOptions
@@ -174,7 +188,11 @@ function PurchaseOptions({
           title="Keranjang segera tersedia"
         >
           <ShoppingCartIcon />
-          {stock > 0 ? "Tambah ke keranjang" : "Stok habis"}
+          {stock <= 0
+            ? "Stok habis"
+            : product.preorderDays !== null
+              ? "Pre-order"
+              : "Tambah ke keranjang"}
         </Button>
       </div>
     </div>
