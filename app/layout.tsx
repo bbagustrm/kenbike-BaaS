@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { publicEnv } from "@/lib/env/public";
+
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -15,6 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(publicEnv.NEXT_PUBLIC_SITE_URL),
   title: {
     default: "KenBike — Toko Sepeda & Aksesoris",
     template: "%s · KenBike",

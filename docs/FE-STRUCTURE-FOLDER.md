@@ -234,7 +234,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 ## 7. Konvensi
 
 - **Penamaan file:** `kebab-case` untuk komponen/file (`product-card.tsx`), komponen React `PascalCase`.
-- **Import:** dari `index.ts` feature (`@/features/cart`), bukan ke file internal feature lain.
+- **Import:** dari `index.ts` feature (`@/features/cart`), bukan ke file internal feature lain. Pengecualian: modul `server-only` (mis. `@/features/catalog/queries`) diimpor langsung dan **tidak** diekspor dari `index.ts`, agar Client Component yang mengimpor index tidak ikut menarik kode server.
 - **Bahasa:** kode dan nama identifier Inggris; teks UI Indonesia (siapkan agar mudah dipindah ke i18n bila perlu).
 - **Jangan** buat folder kosong / abstraksi "just in case". Tambah folder saat ada kode pertama yang membutuhkannya.
 - **Env:** akses lewat `lib/env/public.ts` (`publicEnv`) dan `lib/env/server.ts` (`supabaseServerEnv()`, `midtransEnv()`, `biteshipEnv()`), bukan `process.env` tersebar.

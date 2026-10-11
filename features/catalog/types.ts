@@ -1,0 +1,50 @@
+export type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  sortOrder: number;
+};
+
+export type ProductCardData = {
+  id: string;
+  slug: string;
+  name: string;
+  categoryName: string | null;
+  priceMin: number;
+  priceMax: number;
+  imagePath: string | null;
+};
+
+export type ProductOption = {
+  id: string;
+  name: string;
+  values: { id: string; value: string }[];
+};
+
+export type ProductVariant = {
+  id: string;
+  sku: string;
+  price: number;
+  weightGram: number;
+  dimensionsCm: readonly [number, number, number];
+  optionValueIds: string[];
+};
+
+export type ProductImage = {
+  id: string;
+  path: string;
+  alt: string | null;
+  variantId: string | null;
+};
+
+export type ProductDetail = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  breadcrumb: Category[];
+  options: ProductOption[];
+  variants: ProductVariant[];
+  images: ProductImage[];
+};
