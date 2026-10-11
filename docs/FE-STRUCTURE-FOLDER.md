@@ -17,6 +17,7 @@ lib/        → Infrastruktur teknis (Supabase client, Midtrans, Biteship, util)
 ```
 
 Aturan emas:
+
 1. **Server-first.** Baca data di Server Components; mutasi lewat Server Actions. `"use client"` hanya untuk interaksi.
 2. **Kode yang memakai secret wajib `server-only`** (`import "server-only"`), agar build gagal bila ter-import ke client.
 3. **`app/` tipis.** Halaman hanya memanggil query dari feature dan merender komponen feature.
@@ -117,7 +118,7 @@ kenbike-baas/
 │   │   └── proxy.ts                # helper updateSession() dipanggil dari /proxy.ts
 │   ├── midtrans/                   # server-only: createSnapToken, verifySignature, mapStatus
 │   ├── biteship/                   # server-only: rates, createOrder, searchArea, mapStatus
-│   ├── env.ts                      # validasi env (Zod); pisahkan public vs server
+│   ├── env/                        # public.ts (NEXT_PUBLIC_*) & server.ts (server-only, divalidasi per integrasi)
 │   ├── format.ts                   # formatRupiah, tanggal
 │   └── utils.ts                    # cn() (shadcn)
 │
@@ -143,14 +144,15 @@ kenbike-baas/
 
 Tanpa hierarki atoms/molecules/organisms. Tiga lokasi saja:
 
-| Lokasi | Isi | Contoh |
-|---|---|---|
-| `components/ui/` | Primitif shadcn hasil CLI | Button, Input, Dialog, Sheet, Select, Table |
-| `components/shared/` | Gabungan generik tanpa logika domain | PriceTag, QuantitySelector, EmptyState, DataTable |
-| `components/layout/` | Kerangka halaman | Navbar, Footer, Container |
-| `features/<x>/components/` | Apa pun yang tahu soal domain | ProductCard, CartDrawer, AddressForm |
+| Lokasi                     | Isi                                  | Contoh                                            |
+| -------------------------- | ------------------------------------ | ------------------------------------------------- |
+| `components/ui/`           | Primitif shadcn hasil CLI            | Button, Input, Dialog, Sheet, Select, Table       |
+| `components/shared/`       | Gabungan generik tanpa logika domain | PriceTag, QuantitySelector, EmptyState, DataTable |
+| `components/layout/`       | Kerangka halaman                     | Navbar, Footer, Container                         |
+| `features/<x>/components/` | Apa pun yang tahu soal domain        | ProductCard, CartDrawer, AddressForm              |
 
 **Pohon keputusan:**
+
 ```
 Apakah komponen tahu soal domain (produk, cart, order, alamat)?
 ├─ YA  → features/<domain>/components/
@@ -166,16 +168,17 @@ Komponen dari CommerCN (cart, checkout, product-card, dst) diperlakukan sebagai 
 
 ## 4. Supabase Client — 4 Jenis
 
-| File | Dipakai di | Key | Catatan |
-|---|---|---|---|
-| `lib/supabase/client.ts` | Client Components | anon | Hanya untuk interaksi yang memang perlu di browser (mis. realtime). Default-kan ke Server Actions. |
-| `lib/supabase/server.ts` | RSC, Server Actions, Route Handler | anon + cookie user | Menghormati RLS. Dibuat **per request** (jangan simpan global). Membaca `cookies()` → **tidak boleh** dipakai di dalam `use cache`. |
-| `lib/supabase/public.ts` | Query publik yang di-cache (katalog) | anon, **tanpa cookie** | Aman dipakai di dalam `use cache`. Hanya untuk data yang sama bagi semua pengunjung. |
-| `lib/supabase/admin.ts` | Webhook, job, checkout (`create_order`), operasi sistem | **service role** | `import "server-only"`. Bypass RLS — pakai seminimal mungkin dan hanya setelah verifikasi user/input. |
+| File                     | Dipakai di                                              | Key                    | Catatan                                                                                                                             |
+| ------------------------ | ------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `lib/supabase/client.ts` | Client Components                                       | anon                   | Hanya untuk interaksi yang memang perlu di browser (mis. realtime). Default-kan ke Server Actions.                                  |
+| `lib/supabase/server.ts` | RSC, Server Actions, Route Handler                      | anon + cookie user     | Menghormati RLS. Dibuat **per request** (jangan simpan global). Membaca `cookies()` → **tidak boleh** dipakai di dalam `use cache`. |
+| `lib/supabase/public.ts` | Query publik yang di-cache (katalog)                    | anon, **tanpa cookie** | Aman dipakai di dalam `use cache`. Hanya untuk data yang sama bagi semua pengunjung.                                                |
+| `lib/supabase/admin.ts`  | Webhook, job, checkout (`create_order`), operasi sistem | **service role**       | `import "server-only"`. Bypass RLS — pakai seminimal mungkin dan hanya setelah verifikasi user/input.                               |
 
 ### Cache Components (aktif di `next.config.ts`)
 
 `cacheComponents: true` + `partialPrefetching: true` sudah aktif. Aturannya:
+
 - **Data publik** (produk, kategori): fungsi query diberi `"use cache"` + `cacheTag(...)` + `cacheLife(...)`, memakai `lib/supabase/public.ts`.
 - **Data per-user** (cart, akun, order): memakai `lib/supabase/server.ts` di komponen yang dibungkus `<Suspense>`. Membaca `cookies()` di luar `<Suspense>` = **build error**. Alternatif: `"use cache: private"`.
 - **Invalidasi:** Server Action → `updateTag(tag)`; Route Handler/webhook → `revalidateTag(tag, { expire: 0 })`.
@@ -207,16 +210,17 @@ Komponen dari CommerCN (cart, checkout, product-card, dst) diperlakukan sebagai 
 Hanya provider **client** yang benar-benar dibutuhkan:
 
 ```tsx
-"use client"
+"use client";
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       {children}
       <Toaster /> {/* Sonner */}
     </ThemeProvider>
-  )
+  );
 }
 ```
+
 `QueryClientProvider` ditambahkan **hanya jika** TanStack Query akhirnya dipakai (lihat PRD §2). Tidak ada `AuthProvider` — session dibaca di server.
 
 ---
@@ -227,19 +231,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
 - **Import:** dari `index.ts` feature (`@/features/cart`), bukan ke file internal feature lain.
 - **Bahasa:** kode dan nama identifier Inggris; teks UI Indonesia (siapkan agar mudah dipindah ke i18n bila perlu).
 - **Jangan** buat folder kosong / abstraksi "just in case". Tambah folder saat ada kode pertama yang membutuhkannya.
-- **Env:** akses lewat `lib/env.ts`, bukan `process.env` tersebar.
+- **Env:** akses lewat `lib/env/public.ts` (`publicEnv`) dan `lib/env/server.ts` (`supabaseServerEnv()`, `midtransEnv()`, `biteshipEnv()`), bukan `process.env` tersebar.
 
 ---
 
 ## 8. Status & Langkah Setup
 
 ### Sudah
+
 - ✅ Next.js 16.4.0 + React 19.3 + Tailwind v4 terpasang di `kenbike-baas` (template default, belum ada fitur).
 
 ### Berikutnya (urut)
+
 - 🔲 `bun add @supabase/ssr @supabase/supabase-js zod react-hook-form @hookform/resolvers zustand sonner server-only`
 - 🔲 `bunx shadcn@latest init` (pastikan alias `ui` → `@/components/ui`)
-- 🔲 Buat `lib/supabase/*`, `proxy.ts`, `lib/env.ts`, `.env.example`
+- 🔲 Buat `lib/supabase/*`, `proxy.ts`, `lib/env/*`, `.env.example`
 - 🔲 `supabase init`, tulis migrasi (enum → tabel → trigger → RLS → RPC), `supabase gen types`
 - 🔲 Auth → Katalog → Cart → Alamat → Checkout → Webhook → Admin (lihat PRD §6)
 
