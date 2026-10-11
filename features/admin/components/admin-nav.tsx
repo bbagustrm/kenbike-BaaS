@@ -1,6 +1,12 @@
 "use client";
 
-import { FolderTreeIcon, LayoutDashboardIcon, PackageIcon, StoreIcon } from "lucide-react";
+import {
+  ExternalLinkIcon,
+  FolderTreeIcon,
+  LayoutDashboardIcon,
+  PackageIcon,
+  StoreIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
@@ -8,7 +14,6 @@ import { Suspense } from "react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -32,11 +37,25 @@ export function AdminSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/admin" />}>
-              <span className="flex size-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
+            <SidebarMenuButton size="lg" render={<Link href="/admin" />} tooltip="KenBike Admin">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
                 K
               </span>
-              <span className="font-semibold">KenBike Admin</span>
+              {/* Saat sidebar diciutkan hanya logo "K" yang tampil. */}
+              <span className="truncate font-semibold group-data-[collapsible=icon]:hidden">
+                KenBike Admin
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              render={<Link href="/" target="_blank" />}
+              tooltip="Lihat toko"
+              variant="outline"
+            >
+              <StoreIcon />
+              <span>Lihat toko</span>
+              <ExternalLinkIcon className="ml-auto group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -53,16 +72,6 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton render={<Link href="/" />} tooltip="Lihat toko">
-              <StoreIcon />
-              <span>Lihat toko</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
