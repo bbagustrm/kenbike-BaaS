@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { PackageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
@@ -9,7 +10,14 @@ import { toast } from "sonner";
 import { FormAlert } from "@/components/shared/form-alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
@@ -20,17 +28,13 @@ import { slugify } from "@/lib/slug";
 
 import { saveProduct } from "../actions";
 import { type ProductFormValues, productFormSchema } from "../schemas";
+import { uploadProductImages } from "../upload";
 import { buildVariantRows, comboKey, skuBaseFromSlug } from "../variant-matrix";
 import { OptionsEditor } from "./options-editor";
+import { PendingImages } from "./pending-images";
 import { VariantMatrix } from "./variant-matrix";
 
-const NEW_VARIANT_DEFAULTS = {
-  price: 0,
-  weightGram: 1000,
-  lengthCm: 30,
-  widthCm: 20,
-  heightCm: 10,
-};
+const NEW_VARIANT_DEFAULTS = { price: 0, stock: 0 };
 
 const EMPTY: ProductFormValues = {
   name: "",
@@ -38,9 +42,25 @@ const EMPTY: ProductFormValues = {
   categoryId: "",
   description: "",
   isActive: true,
+  isPreorder: false,
+  preorderDays: null,
+  weightGram: 1000,
+  lengthCm: 30,
+  widthCm: 20,
+  heightCm: 10,
   options: [],
   variants: [],
 };
+
+const PACKAGE_FIELDS = [
+  { name: "weightGram", label: "Berat (gram)", step: 50 },
+  { name: "lengthCm", label: "Panjang (cm)", step: 1 },
+  { name: "widthCm", label: "Lebar (cm)", step: 1 },
+  { name: "heightCm", label: "Tinggi (cm)", step: 1 },
+] as const;
+
+/** Angka dari input number; kosong → null (untuk field opsional). */
+const numberOrNull = (v: unknown) => (v === "" || v === null ? null : Number(v));
 
 type ProductFormProps = {
   productId: string | null;
@@ -52,6 +72,8 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<ActionState | null>(null);
+  // Foto untuk produk baru disimpan dulu di browser, diunggah setelah produk dibuat.
+  const [newImages, setNewImages] = useState<File[]>([]);
   // Slug otomatis dari nama hanya untuk produk baru, sampai slug diubah manual.
   const [slugTouched, setSlugTouched] = useState(Boolean(productId));
 
@@ -65,6 +87,7 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
   // Susun ulang matriks varian setiap kali opsi berubah (baris lama dipertahankan).
   const options = useWatch({ control, name: "options" });
   const slug = useWatch({ control, name: "slug" });
+  const isPreorder = useWatch({ control, name: "isPreorder" });
   useEffect(() => {
     const current = getValues("variants");
     const next = buildVariantRows(
@@ -86,13 +109,21 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
     setFormError(null);
     startTransition(async () => {
       const result = await saveProduct(productId, values);
-      if (result.status === "error") {
+      if (result.status === "error" && !result.productId) {
         setFormError(result);
         toast.error(result.message ?? "Gagal menyimpan produk.");
         return;
       }
-      toast.success(result.message);
+      if (result.status === "error") toast.error(result.message);
+      else toast.success(result.message);
+
       if (!productId && result.productId) {
+        if (newImages.length > 0) {
+          const upload = await uploadProductImages(result.productId, newImages);
+          if (upload.status === "error") {
+            toast.error(`Produk dibuat, tetapi foto gagal diunggah: ${upload.message}`);
+          }
+        }
         router.push(`/admin/products/${result.productId}`);
       } else {
         form.reset(values);
@@ -172,7 +203,89 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
                 />
                 <FieldLabel htmlFor="isActive">Tampilkan di toko</FieldLabel>
               </Field>
+              <Field orientation="horizontal">
+                <Controller
+                  control={control}
+                  name="isPreorder"
+                  render={({ field }) => (
+                    <Switch
+                      id="isPreorder"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+                <FieldContent>
+                  <FieldLabel htmlFor="isPreorder">Pre-order</FieldLabel>
+                  <FieldDescription>
+                    Pembeli tetap membayar di muka dan stok tetap berkurang; bedanya pengiriman
+                    lebih lama dari biasanya.
+                  </FieldDescription>
+                </FieldContent>
+              </Field>
+              {isPreorder && (
+                <Field data-invalid={errors.preorderDays ? true : undefined} className="max-w-xs">
+                  <FieldLabel htmlFor="preorderDays">Estimasi siap dikirim (hari)</FieldLabel>
+                  <Input
+                    id="preorderDays"
+                    type="number"
+                    min={1}
+                    max={365}
+                    aria-invalid={errors.preorderDays ? true : undefined}
+                    {...register("preorderDays", { setValueAs: numberOrNull })}
+                  />
+                  <FieldDescription>
+                    Ditampilkan ke pembeli, mis. &quot;Pre-order · dikirim ±14 hari&quot;.
+                  </FieldDescription>
+                  <FieldError>{errors.preorderDays?.message}</FieldError>
+                </Field>
+              )}
             </FieldGroup>
+          </CardContent>
+        </Card>
+
+        {!productId && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Foto</CardTitle>
+              <CardDescription>
+                Foto khusus varian (mis. per warna) dapat diatur setelah produk dibuat.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PendingImages files={newImages} onChange={setNewImages} />
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PackageIcon className="size-4" aria-hidden="true" />
+              Pengemasan
+            </CardTitle>
+            <CardDescription>
+              Berat dan ukuran paket <strong>setelah dikemas</strong>, berlaku untuk semua varian.
+              Dipakai kurir untuk menghitung ongkos kirim (berat volumetrik P × L × T).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {PACKAGE_FIELDS.map((f) => (
+                <Field key={f.name} data-invalid={errors[f.name] ? true : undefined}>
+                  <FieldLabel htmlFor={f.name}>{f.label}</FieldLabel>
+                  <Input
+                    id={f.name}
+                    type="number"
+                    min={1}
+                    step={f.step}
+                    aria-invalid={errors[f.name] ? true : undefined}
+                    {...register(f.name, { valueAsNumber: true })}
+                  />
+                  <FieldError>{errors[f.name]?.message}</FieldError>
+                </Field>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
@@ -189,9 +302,7 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
         <Card>
           <CardHeader>
             <CardTitle>Varian</CardTitle>
-            <CardDescription>
-              Dibuat otomatis dari kombinasi opsi. Berat dan dimensi dipakai untuk ongkos kirim.
-            </CardDescription>
+            <CardDescription>Dibuat otomatis dari kombinasi opsi.</CardDescription>
           </CardHeader>
           <CardContent>
             <VariantMatrix />

@@ -1,9 +1,6 @@
 import type { OptionFormValues, VariantFormValues } from "./schemas";
 
-type Defaults = Pick<
-  VariantFormValues,
-  "price" | "weightGram" | "lengthCm" | "widthCm" | "heightCm"
->;
+type Defaults = Pick<VariantFormValues, "price" | "stock">;
 
 /** Semua kombinasi nilai opsi; satu kombinasi kosong jika tanpa opsi. */
 export function combinations(options: OptionFormValues[]): Record<string, string>[] {
@@ -53,8 +50,9 @@ export function suggestSku(
 
 /**
  * Susun ulang baris varian setelah opsi berubah. Baris dengan kombinasi nilai
- * yang sama dipertahankan (id, SKU, harga, dll.); baris baru mewarisi angka
- * dari baris pertama yang ada (atau `defaults`) dan mendapat saran SKU.
+ * yang sama dipertahankan (id, SKU, harga, stok); baris baru mewarisi harga
+ * dari baris pertama yang ada (atau `defaults`), stok dari `defaults`, dan
+ * mendapat saran SKU.
  * Opsi tanpa nama atau tanpa nilai diabaikan sampai lengkap.
  */
 export function buildVariantRows(
@@ -87,12 +85,8 @@ export function buildVariantRows(
       options: combo,
       sku: suggestSku(skuBase, options, combo),
       price: template?.price ?? defaults.price,
-      weightGram: template?.weightGram ?? defaults.weightGram,
-      lengthCm: template?.lengthCm ?? defaults.lengthCm,
-      widthCm: template?.widthCm ?? defaults.widthCm,
-      heightCm: template?.heightCm ?? defaults.heightCm,
+      stock: defaults.stock,
       isActive: true,
-      initialStock: 0,
     };
   });
 }

@@ -2,7 +2,7 @@
 
 import { WandSparklesIcon } from "lucide-react";
 import { useState } from "react";
-import { Controller, type FieldPath, useFormContext, useWatch } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,29 +20,26 @@ import { cn } from "@/lib/utils";
 import type { ProductFormValues } from "../schemas";
 import { comboLabel, skuBaseFromSlug, suggestSku } from "../variant-matrix";
 
-const NUMBER_FIELDS = [
-  { key: "price", label: "Harga (Rp)", step: 1000, width: "w-32" },
-  { key: "weightGram", label: "Berat (g)", step: 50, width: "w-24" },
-  { key: "lengthCm", label: "P (cm)", step: 1, width: "w-20" },
-  { key: "widthCm", label: "L (cm)", step: 1, width: "w-20" },
-  { key: "heightCm", label: "T (cm)", step: 1, width: "w-20" },
+const BULK_FIELDS = [
+  { key: "price", label: "Harga semua varian (Rp)", step: 1000 },
+  { key: "stock", label: "Stok semua varian", step: 1 },
 ] as const;
 
-type NumberKey = (typeof NUMBER_FIELDS)[number]["key"];
+type BulkKey = (typeof BULK_FIELDS)[number]["key"];
 
 /**
  * Matriks varian. Baris dibuat otomatis dari kombinasi opsi (lihat
- * ProductForm); di sini admin mengisi SKU, harga, berat, dan dimensi.
+ * ProductForm); admin mengisi SKU, harga, stok, dan status aktif.
  */
 export function VariantMatrix() {
   const { control, register, setValue, getValues, formState } = useFormContext<ProductFormValues>();
   const variants = useWatch({ control, name: "variants" }) ?? [];
   const options = useWatch({ control, name: "options" }) ?? [];
   const slug = useWatch({ control, name: "slug" }) ?? "";
-  const [bulk, setBulk] = useState<Partial<Record<NumberKey, string>>>({});
+  const [bulk, setBulk] = useState<Partial<Record<BulkKey, string>>>({});
 
   const applyBulk = () => {
-    for (const { key } of NUMBER_FIELDS) {
+    for (const { key } of BULK_FIELDS) {
       const raw = bulk[key];
       if (raw === undefined || raw === "") continue;
       const value = Number(raw);
@@ -75,28 +72,30 @@ export function VariantMatrix() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-2 rounded-lg bg-muted/50 p-3">
-        {NUMBER_FIELDS.map((f) => (
-          <label key={f.key} className="space-y-1 text-xs text-muted-foreground">
-            {f.label}
-            <Input
-              type="number"
-              min={0}
-              step={f.step}
-              className={cn("bg-background", f.width)}
-              value={bulk[f.key] ?? ""}
-              onChange={(e) => setBulk((b) => ({ ...b, [f.key]: e.target.value }))}
-            />
-          </label>
-        ))}
-        <Button type="button" variant="outline" onClick={applyBulk}>
-          Terapkan ke semua
-        </Button>
-        <Button type="button" variant="ghost" onClick={fillSkus} className="ml-auto">
-          <WandSparklesIcon />
-          Isi SKU varian baru
-        </Button>
-      </div>
+      {variants.length > 1 && (
+        <div className="flex flex-wrap items-end gap-2 rounded-lg bg-muted/50 p-3">
+          {BULK_FIELDS.map((f) => (
+            <label key={f.key} className="space-y-1 text-xs text-muted-foreground">
+              {f.label}
+              <Input
+                type="number"
+                min={0}
+                step={f.step}
+                className="w-40 bg-background"
+                value={bulk[f.key] ?? ""}
+                onChange={(e) => setBulk((b) => ({ ...b, [f.key]: e.target.value }))}
+              />
+            </label>
+          ))}
+          <Button type="button" variant="outline" onClick={applyBulk}>
+            Terapkan ke semua
+          </Button>
+          <Button type="button" variant="ghost" onClick={fillSkus} className="ml-auto">
+            <WandSparklesIcon />
+            Isi SKU varian baru
+          </Button>
+        </div>
+      )}
 
       {variantsError && <p className="text-sm text-destructive">{variantsError}</p>}
 
@@ -106,10 +105,8 @@ export function VariantMatrix() {
             <TableRow>
               <TableHead>Varian</TableHead>
               <TableHead>SKU</TableHead>
-              {NUMBER_FIELDS.map((f) => (
-                <TableHead key={f.key}>{f.label}</TableHead>
-              ))}
-              <TableHead>Stok awal</TableHead>
+              <TableHead>Harga (Rp)</TableHead>
+              <TableHead>Stok</TableHead>
               <TableHead>Aktif</TableHead>
             </TableRow>
           </TableHeader>
@@ -126,38 +123,30 @@ export function VariantMatrix() {
                     <CellInput
                       label={`SKU ${label}`}
                       error={errorOf(i, "sku")}
-                      className="w-40 font-mono"
+                      className="w-44 font-mono"
                       {...register(`variants.${i}.sku`)}
                     />
                   </TableCell>
-                  {NUMBER_FIELDS.map((f) => (
-                    <TableCell key={f.key}>
-                      <CellInput
-                        type="number"
-                        min={0}
-                        step={f.step}
-                        label={`${f.label} ${label}`}
-                        error={errorOf(i, f.key)}
-                        className={f.width}
-                        {...register(`variants.${i}.${f.key}` as FieldPath<ProductFormValues>, {
-                          valueAsNumber: true,
-                        })}
-                      />
-                    </TableCell>
-                  ))}
                   <TableCell>
-                    {row.id ? (
-                      <span className="text-xs text-muted-foreground">lihat panel stok</span>
-                    ) : (
-                      <CellInput
-                        type="number"
-                        min={0}
-                        label={`Stok awal ${label}`}
-                        error={errorOf(i, "initialStock")}
-                        className="w-20"
-                        {...register(`variants.${i}.initialStock`, { valueAsNumber: true })}
-                      />
-                    )}
+                    <CellInput
+                      type="number"
+                      min={0}
+                      step={1000}
+                      label={`Harga ${label}`}
+                      error={errorOf(i, "price")}
+                      className="w-36"
+                      {...register(`variants.${i}.price`, { valueAsNumber: true })}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <CellInput
+                      type="number"
+                      min={0}
+                      label={`Stok ${label}`}
+                      error={errorOf(i, "stock")}
+                      className="w-24"
+                      {...register(`variants.${i}.stock`, { valueAsNumber: true })}
+                    />
                   </TableCell>
                   <TableCell>
                     <Controller
@@ -179,7 +168,8 @@ export function VariantMatrix() {
         </Table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Varian yang sudah pernah dipesan tidak dihapus saat dibuang dari matriks — otomatis
+        Stok = jumlah fisik di gudang. Perubahan stok varian lama dicatat sebagai penyesuaian (lihat
+        panel Stok). Varian yang pernah dipesan tidak dihapus saat dibuang dari matriks — otomatis
         dinonaktifkan agar riwayat pesanan tetap utuh.
       </p>
     </div>
@@ -201,7 +191,7 @@ function CellInput({
         className={cn("h-8", className)}
         {...props}
       />
-      {error && <p className="max-w-40 text-xs text-destructive">{error}</p>}
+      {error && <p className="max-w-44 text-xs text-destructive">{error}</p>}
     </div>
   );
 }

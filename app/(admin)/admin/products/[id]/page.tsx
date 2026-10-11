@@ -25,6 +25,8 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
   return (
     <div className="space-y-6">
       <AdminPageHeader
+        backHref="/admin/products"
+        backLabel="Kembali ke daftar produk"
         title={product.form.name}
         description={product.form.isActive ? "Tampil di toko" : "Nonaktif — tidak tampil di toko"}
         actions={

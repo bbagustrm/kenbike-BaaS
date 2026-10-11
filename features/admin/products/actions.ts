@@ -8,7 +8,7 @@ import { dbErrorMessage } from "@/lib/db-errors";
 import { createClient } from "@/lib/supabase/server";
 
 import { assertAdminAction } from "../guard";
-import { productFormSchema, toRpcPayload } from "./schemas";
+import { productFormSchema, stockAdjustments, toRpcPayload } from "./schemas";
 
 export type SaveProductResult = ActionState & { productId?: string };
 
@@ -47,8 +47,28 @@ export async function saveProduct(
       payload,
     });
     if (error) return { status: "error", message: dbErrorMessage(error) };
+
+    // Stok varian lama diubah sebagai selisih dari nilai saat form dimuat, jadi
+    // penjualan yang terjadi selama admin mengedit tidak tertimpa.
+    const failed: string[] = [];
+    for (const { variantId, delta } of stockAdjustments(parsed.data)) {
+      const { error: stockError } = await supabase.rpc("admin_adjust_stock", {
+        p_variant_id: variantId,
+        p_delta: delta,
+        p_reason: "Diubah dari form produk",
+      });
+      if (stockError) failed.push(dbErrorMessage(stockError));
+    }
+
     invalidateProduct(before?.slug, parsed.data.slug);
     refresh();
+    if (failed.length > 0) {
+      return {
+        status: "error",
+        message: `Produk disimpan, tetapi sebagian stok gagal diubah: ${failed[0]}`,
+        productId,
+      };
+    }
     return { status: "success", message: "Produk disimpan.", productId };
   }
 

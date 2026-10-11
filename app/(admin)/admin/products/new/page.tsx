@@ -11,8 +11,10 @@ export default async function NewProductPage() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
+        backHref="/admin/products"
+        backLabel="Kembali ke daftar produk"
         title="Tambah produk"
-        description="Foto produk dapat diunggah setelah produk dibuat."
+        description="Isi informasi, foto, pengemasan, dan varian produk."
       />
       <ProductForm productId={null} categories={categories} />
     </div>

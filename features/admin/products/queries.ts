@@ -132,7 +132,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
   const { data, error } = await supabase
     .from("products")
     .select(
-      `id, name, slug, description, category_id, is_active,
+      `id, name, slug, description, category_id, is_active, is_preorder, preorder_days,
        options:product_options (id, name, sort_order,
          values:product_option_values (id, value, sort_order)),
        variants:product_variants (id, sku, price, weight_gram, length_cm, width_cm, height_cm, is_active, created_at,
@@ -185,10 +185,8 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
           options: combo,
           sku: v.sku,
           price: v.price,
-          weightGram: v.weight_gram,
-          lengthCm: v.length_cm,
-          widthCm: v.width_cm,
-          heightCm: v.height_cm,
+          stock: 0,
+          stockOriginal: 0,
           isActive: v.is_active,
         },
       ];
@@ -208,6 +206,16 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
   });
   if (stockError) throw new Error(`admin_get_stock: ${stockError.message}`);
   const stockById = new Map(stockRows.map((s) => [s.variant_id, s]));
+  for (const v of formVariants) {
+    const quantity = stockById.get(v.id)?.quantity ?? 0;
+    v.stock = quantity;
+    v.stockOriginal = quantity;
+  }
+
+  // Ukuran paket disimpan per varian di DB tetapi dikelola satu untuk produk:
+  // ambil dari varian aktif pertama.
+  const pkg =
+    [...data.variants].sort((a, b) => Number(b.is_active) - Number(a.is_active))[0] ?? null;
 
   return {
     id: data.id,
@@ -218,6 +226,12 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
       categoryId: data.category_id,
       description: data.description ?? "",
       isActive: data.is_active,
+      isPreorder: data.is_preorder,
+      preorderDays: data.preorder_days,
+      weightGram: pkg?.weight_gram ?? 1000,
+      lengthCm: pkg?.length_cm ?? 30,
+      widthCm: pkg?.width_cm ?? 20,
+      heightCm: pkg?.height_cm ?? 10,
       options: options.map((o) => ({ name: o.name, values: o.values.map((v) => v.value) })),
       variants: formVariants,
     },

@@ -25,13 +25,11 @@ export const variantFormSchema = z.object({
     .max(50, { error: "SKU maksimal 50 karakter" })
     .regex(/^[A-Za-z0-9._-]+$/, { error: "SKU hanya huruf, angka, titik, - dan _" }),
   price: int(0, 10_000_000_000, "Harga"),
-  weightGram: int(1, 1_000_000, "Berat"),
-  lengthCm: int(1, 1000, "Panjang"),
-  widthCm: int(1, 1000, "Lebar"),
-  heightCm: int(1, 1000, "Tinggi"),
+  /** Stok fisik yang diinginkan. Varian baru: stok awal. */
+  stock: int(0, 100_000, "Stok"),
+  /** Stok fisik saat form dimuat (varian lama) — selisihnya dicatat sebagai penyesuaian. */
+  stockOriginal: z.number().int().optional(),
   isActive: z.boolean(),
-  /** Hanya untuk varian baru; stok varian lama diubah lewat penyesuaian stok. */
-  initialStock: int(0, 100_000, "Stok awal").optional(),
 });
 
 export const optionFormSchema = z.object({
@@ -65,6 +63,14 @@ export const productFormSchema = z
     categoryId: z.uuid({ error: "Pilih kategori" }),
     description: z.string().trim().max(5000, { error: "Maksimal 5000 karakter" }),
     isActive: z.boolean(),
+    isPreorder: z.boolean(),
+    /** Estimasi siap kirim (hari); wajib bila pre-order. */
+    preorderDays: int(1, 365, "Estimasi hari").nullable(),
+    /** Ukuran paket pengiriman — sama untuk semua varian. */
+    weightGram: int(1, 1_000_000, "Berat"),
+    lengthCm: int(1, 1000, "Panjang"),
+    widthCm: int(1, 1000, "Lebar"),
+    heightCm: int(1, 1000, "Tinggi"),
     options: z.array(optionFormSchema).max(MAX_OPTIONS, { error: `Maksimal ${MAX_OPTIONS} opsi` }),
     variants: z
       .array(variantFormSchema)
@@ -72,6 +78,13 @@ export const productFormSchema = z
       .max(MAX_VARIANTS, { error: `Maksimal ${MAX_VARIANTS} varian` }),
   })
   .superRefine((value, ctx) => {
+    if (value.isPreorder && value.preorderDays === null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["preorderDays"],
+        message: "Isi estimasi hari pengiriman untuk pre-order",
+      });
+    }
     const names = value.options.map((o) => o.name.toLowerCase());
     names.forEach((name, i) => {
       if (names.indexOf(name) !== i) {
@@ -105,17 +118,31 @@ export function toRpcPayload(values: ProductFormValues) {
     slug: values.slug,
     description: values.description || null,
     is_active: values.isActive,
+    is_preorder: values.isPreorder,
+    preorder_days: values.isPreorder ? values.preorderDays : null,
     options: values.options.map((o) => ({ name: o.name, values: o.values })),
     variants: values.variants.map((v) => ({
-      ...(v.id ? { id: v.id } : { initial_stock: v.initialStock ?? 0 }),
+      ...(v.id ? { id: v.id } : { initial_stock: v.stock }),
       sku: v.sku,
       price: v.price,
-      weight_gram: v.weightGram,
-      length_cm: v.lengthCm,
-      width_cm: v.widthCm,
-      height_cm: v.heightCm,
+      // Ukuran paket diterapkan sama ke semua varian.
+      weight_gram: values.weightGram,
+      length_cm: values.lengthCm,
+      width_cm: values.widthCm,
+      height_cm: values.heightCm,
       is_active: v.isActive,
       options: v.options,
     })),
   };
+}
+
+/** Perubahan stok varian lama dari form → penyesuaian stok (delta, bukan nilai absolut). */
+export function stockAdjustments(
+  values: ProductFormValues,
+): { variantId: string; delta: number }[] {
+  return values.variants.flatMap((v) =>
+    v.id && v.stockOriginal !== undefined && v.stock !== v.stockOriginal
+      ? [{ variantId: v.id, delta: v.stock - v.stockOriginal }]
+      : [],
+  );
 }

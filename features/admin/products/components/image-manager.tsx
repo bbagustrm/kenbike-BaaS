@@ -11,21 +11,11 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
 import { ProductImage } from "@/features/catalog";
-import { createClient } from "@/lib/supabase/client";
 
-import {
-  addProductImages,
-  deleteProductImage,
-  reorderProductImages,
-  updateProductImage,
-} from "../image-actions";
-import {
-  ALLOWED_IMAGE_TYPES,
-  PRODUCT_IMAGE_BUCKET,
-  productImagePath,
-  validateImageFile,
-} from "../images";
+import { deleteProductImage, reorderProductImages, updateProductImage } from "../image-actions";
+import { ALLOWED_IMAGE_TYPES } from "../images";
 import type { AdminProductImage, AdminVariantStock } from "../queries";
+import { MAX_FILES_PER_UPLOAD, uploadProductImages } from "../upload";
 
 type ImageManagerProps = {
   productId: string;
@@ -41,39 +31,12 @@ export function ImageManager({ productId, productName, images, variants }: Image
 
   const upload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const list = Array.from(files).slice(0, 10);
-    const invalid = list.map(validateImageFile).filter(Boolean);
-    if (invalid.length > 0) {
-      invalid.forEach((message) => toast.error(message));
-      return;
-    }
-
     setUploading(true);
-    const supabase = createClient();
-    const uploaded: { path: string }[] = [];
-    try {
-      for (const file of list) {
-        const ext = ALLOWED_IMAGE_TYPES[file.type as keyof typeof ALLOWED_IMAGE_TYPES];
-        const path = productImagePath(productId, crypto.randomUUID(), ext);
-        // Upload langsung dari browser; policy Storage hanya mengizinkan admin.
-        const { error } = await supabase.storage
-          .from(PRODUCT_IMAGE_BUCKET)
-          .upload(path, file, { contentType: file.type, cacheControl: "31536000", upsert: false });
-        if (error) throw new Error(`${file.name}: ${error.message}`);
-        uploaded.push({ path });
-      }
-      const result = await addProductImages({ productId, images: uploaded });
-      if (result.status === "error") toast.error(result.message);
-      else toast.success(result.message);
-    } catch (error) {
-      if (uploaded.length > 0) {
-        await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove(uploaded.map((u) => u.path));
-      }
-      toast.error(error instanceof Error ? error.message : "Gagal mengunggah foto.");
-    } finally {
-      setUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
-    }
+    const result = await uploadProductImages(productId, Array.from(files));
+    setUploading(false);
+    if (inputRef.current) inputRef.current.value = "";
+    if (result.status === "error") toast.error(result.message);
+    else toast.success(result.message);
   };
 
   const move = (index: number, direction: -1 | 1) => {
@@ -115,8 +78,8 @@ export function ImageManager({ productId, productName, images, variants }: Image
           {uploading ? "Mengunggah…" : "Unggah foto"}
         </Button>
         <p className="text-xs text-muted-foreground">
-          JPG, PNG, atau WebP, maks. 5 MB, hingga 10 file sekaligus. Foto pertama menjadi foto
-          utama.
+          JPG, PNG, atau WebP, maks. 5 MB, hingga {MAX_FILES_PER_UPLOAD} file sekaligus. Foto
+          pertama menjadi foto utama.
         </p>
         {pending && <Spinner className="ml-auto" />}
       </div>
@@ -126,7 +89,7 @@ export function ImageManager({ productId, productName, images, variants }: Image
           Belum ada foto. Produk ditampilkan dengan gambar placeholder.
         </p>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {images.map((img, index) => (
             <li key={img.id} className="space-y-2 rounded-lg border p-3">
               <div className="relative">

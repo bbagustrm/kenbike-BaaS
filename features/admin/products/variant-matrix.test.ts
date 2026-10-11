@@ -9,7 +9,7 @@ import {
   suggestSku,
 } from "./variant-matrix";
 
-const defaults = { price: 100_000, weightGram: 500, lengthCm: 10, widthCm: 10, heightCm: 10 };
+const defaults = { price: 100_000, stock: 0 };
 
 const row = (
   options: Record<string, string>,
@@ -18,10 +18,7 @@ const row = (
   options,
   sku: "SKU",
   price: 1,
-  weightGram: 1,
-  lengthCm: 1,
-  widthCm: 1,
-  heightCm: 1,
+  stock: 1,
   isActive: true,
   ...extra,
 });
@@ -76,7 +73,8 @@ describe("buildVariantRows", () => {
       defaults,
     );
     expect(rows.map((r) => r.sku)).toEqual(["B", "KB-HIJAU"]);
-    expect(rows[1]!.price).toBe(5); // baris baru mewarisi angka baris pertama yang ada
+    expect(rows[1]!.price).toBe(5); // baris baru mewarisi harga baris pertama yang ada
+    expect(rows[1]!.stock).toBe(0); // stok tidak ikut diwarisi
   });
 
   it("mengganti nama opsi tidak menghapus data varian", () => {
