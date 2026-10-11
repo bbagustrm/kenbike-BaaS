@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AdminSidebar } from "@/features/admin";
+import { AdminContentSkeleton, AdminSidebar } from "@/features/admin";
 import { requireAdmin } from "@/lib/auth/session";
 
 /**
@@ -41,13 +41,4 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
 async function AdminGate({ children }: { children: React.ReactNode }) {
   await requireAdmin();
   return children;
-}
-
-function AdminContentSkeleton() {
-  return (
-    <div className="space-y-4" aria-busy="true">
-      <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-64 w-full" />
-    </div>
-  );
 }

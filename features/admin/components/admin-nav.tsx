@@ -35,7 +35,7 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <SidebarMenu>
+        <SidebarMenu className="gap-3">
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href="/admin" />} tooltip="KenBike Admin">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">

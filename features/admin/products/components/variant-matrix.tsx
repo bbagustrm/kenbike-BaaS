@@ -73,9 +73,12 @@ export function VariantMatrix() {
   return (
     <div className="space-y-4">
       {variants.length > 1 && (
-        <div className="flex flex-wrap items-end gap-2 rounded-lg bg-muted/50 p-3">
+        <div className="flex flex-wrap items-end gap-x-4 gap-y-3 rounded-lg bg-muted/50 p-4">
           {BULK_FIELDS.map((f) => (
-            <label key={f.key} className="space-y-1 text-xs text-muted-foreground">
+            <label
+              key={f.key}
+              className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground"
+            >
               {f.label}
               <Input
                 type="number"

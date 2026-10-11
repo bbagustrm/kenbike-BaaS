@@ -1,9 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PackageIcon } from "lucide-react";
+import { ClockIcon, PackageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -29,9 +29,9 @@ import { slugify } from "@/lib/slug";
 import { saveProduct } from "../actions";
 import { type ProductFormValues, productFormSchema } from "../schemas";
 import { uploadProductImages } from "../upload";
-import { buildVariantRows, comboKey, skuBaseFromSlug } from "../variant-matrix";
+import { buildVariantRows, comboKey, comboLabel, skuBaseFromSlug } from "../variant-matrix";
 import { OptionsEditor } from "./options-editor";
-import { PendingImages } from "./pending-images";
+import { type PendingImage, PendingImages } from "./pending-images";
 import { VariantMatrix } from "./variant-matrix";
 
 const NEW_VARIANT_DEFAULTS = { price: 0, stock: 0 };
@@ -73,7 +73,7 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<ActionState | null>(null);
   // Foto untuk produk baru disimpan dulu di browser, diunggah setelah produk dibuat.
-  const [newImages, setNewImages] = useState<File[]>([]);
+  const [newImages, setNewImages] = useState<PendingImage[]>([]);
   // Slug otomatis dari nama hanya untuk produk baru, sampai slug diubah manual.
   const [slugTouched, setSlugTouched] = useState(Boolean(productId));
 
@@ -88,6 +88,15 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
   const options = useWatch({ control, name: "options" });
   const slug = useWatch({ control, name: "slug" });
   const isPreorder = useWatch({ control, name: "isPreorder" });
+  const variants = useWatch({ control, name: "variants" });
+  // Pilihan "foto untuk varian" pada produk baru: dikunci per kombinasi opsi.
+  const variantChoices = useMemo(() => {
+    const valid = (options ?? []).filter((o) => o.name.trim() && o.values.length > 0);
+    return (variants ?? []).map((row) => ({
+      key: comboKey(valid, row.options),
+      label: comboLabel(valid, row.options),
+    }));
+  }, [options, variants]);
   useEffect(() => {
     const current = getValues("variants");
     const next = buildVariantRows(
@@ -119,7 +128,20 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
 
       if (!productId && result.productId) {
         if (newImages.length > 0) {
-          const upload = await uploadProductImages(result.productId, newImages);
+          const valid = values.options.filter((o) => o.name.trim() && o.values.length > 0);
+          const skuByKey = new Map(
+            values.variants.map((v) => [comboKey(valid, v.options), v.sku.toLowerCase()]),
+          );
+          const upload = await uploadProductImages(
+            result.productId,
+            newImages.map((img) => ({
+              file: img.file,
+              alt: img.alt,
+              variantId: img.variantKey
+                ? (result.variantIds?.[skuByKey.get(img.variantKey) ?? ""] ?? null)
+                : null,
+            })),
+          );
           if (upload.status === "error") {
             toast.error(`Produk dibuat, tetapi foto gagal diunggah: ${upload.message}`);
           }
@@ -203,43 +225,6 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
                 />
                 <FieldLabel htmlFor="isActive">Tampilkan di toko</FieldLabel>
               </Field>
-              <Field orientation="horizontal">
-                <Controller
-                  control={control}
-                  name="isPreorder"
-                  render={({ field }) => (
-                    <Switch
-                      id="isPreorder"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-                <FieldContent>
-                  <FieldLabel htmlFor="isPreorder">Pre-order</FieldLabel>
-                  <FieldDescription>
-                    Pembeli tetap membayar di muka dan stok tetap berkurang; bedanya pengiriman
-                    lebih lama dari biasanya.
-                  </FieldDescription>
-                </FieldContent>
-              </Field>
-              {isPreorder && (
-                <Field data-invalid={errors.preorderDays ? true : undefined} className="max-w-xs">
-                  <FieldLabel htmlFor="preorderDays">Estimasi siap dikirim (hari)</FieldLabel>
-                  <Input
-                    id="preorderDays"
-                    type="number"
-                    min={1}
-                    max={365}
-                    aria-invalid={errors.preorderDays ? true : undefined}
-                    {...register("preorderDays", { setValueAs: numberOrNull })}
-                  />
-                  <FieldDescription>
-                    Ditampilkan ke pembeli, mis. &quot;Pre-order · dikirim ±14 hari&quot;.
-                  </FieldDescription>
-                  <FieldError>{errors.preorderDays?.message}</FieldError>
-                </Field>
-              )}
             </FieldGroup>
           </CardContent>
         </Card>
@@ -249,11 +234,11 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
             <CardHeader>
               <CardTitle>Foto</CardTitle>
               <CardDescription>
-                Foto khusus varian (mis. per warna) dapat diatur setelah produk dibuat.
+                Atur foto produk dan foto khusus varian (mis. per warna).
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <PendingImages files={newImages} onChange={setNewImages} />
+              <PendingImages images={newImages} onChange={setNewImages} variants={variantChoices} />
             </CardContent>
           </Card>
         )}
@@ -306,6 +291,60 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
           </CardHeader>
           <CardContent>
             <VariantMatrix />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ClockIcon className="size-4" aria-hidden="true" />
+              Pre-order
+            </CardTitle>
+            <CardDescription>
+              Untuk barang yang perlu dipesan/dirakit dulu. Ditampilkan ke pembeli sebagai estimasi
+              waktu pengiriman.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup>
+              <Field orientation="horizontal">
+                <Controller
+                  control={control}
+                  name="isPreorder"
+                  render={({ field }) => (
+                    <Switch
+                      id="isPreorder"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+                <FieldContent>
+                  <FieldLabel htmlFor="isPreorder">Jadikan produk pre-order</FieldLabel>
+                  <FieldDescription>
+                    Pembeli tetap membayar di muka dan stok tetap berkurang; bedanya pengiriman
+                    lebih lama dari biasanya.
+                  </FieldDescription>
+                </FieldContent>
+              </Field>
+              {isPreorder && (
+                <Field data-invalid={errors.preorderDays ? true : undefined} className="max-w-xs">
+                  <FieldLabel htmlFor="preorderDays">Estimasi siap dikirim (hari)</FieldLabel>
+                  <Input
+                    id="preorderDays"
+                    type="number"
+                    min={1}
+                    max={365}
+                    aria-invalid={errors.preorderDays ? true : undefined}
+                    {...register("preorderDays", { setValueAs: numberOrNull })}
+                  />
+                  <FieldDescription>
+                    Ditampilkan ke pembeli, mis. &quot;Pre-order · dikirim ±14 hari&quot;.
+                  </FieldDescription>
+                  <FieldError>{errors.preorderDays?.message}</FieldError>
+                </Field>
+              )}
+            </FieldGroup>
           </CardContent>
         </Card>
 

@@ -13,20 +13,27 @@ import {
 
 export const MAX_FILES_PER_UPLOAD = 10;
 
+export type UploadItem = File | { file: File; alt?: string; variantId?: string | null };
+
 /**
  * Unggah foto langsung dari browser ke Storage (policy hanya admin), lalu
  * catat lewat Server Action. Jika ada yang gagal, file yang sudah terunggah
  * dihapus agar tidak tertinggal tanpa baris di DB.
  */
-export async function uploadProductImages(productId: string, files: File[]): Promise<ActionState> {
-  const list = files.slice(0, MAX_FILES_PER_UPLOAD);
-  const invalid = list.map(validateImageFile).filter(Boolean);
+export async function uploadProductImages(
+  productId: string,
+  items: UploadItem[],
+): Promise<ActionState> {
+  const list = items
+    .slice(0, MAX_FILES_PER_UPLOAD)
+    .map((item) => (item instanceof File ? { file: item } : item));
+  const invalid = list.map((item) => validateImageFile(item.file)).filter(Boolean);
   if (invalid.length > 0) return { status: "error", message: invalid.join(" ") };
 
   const supabase = createClient();
   const uploaded: string[] = [];
   try {
-    for (const file of list) {
+    for (const { file } of list) {
       const ext = ALLOWED_IMAGE_TYPES[file.type as keyof typeof ALLOWED_IMAGE_TYPES];
       const path = productImagePath(productId, crypto.randomUUID(), ext);
       const { error } = await supabase.storage
@@ -35,7 +42,14 @@ export async function uploadProductImages(productId: string, files: File[]): Pro
       if (error) throw new Error(`${file.name}: ${error.message}`);
       uploaded.push(path);
     }
-    return await addProductImages({ productId, images: uploaded.map((path) => ({ path })) });
+    return await addProductImages({
+      productId,
+      images: uploaded.map((path, i) => ({
+        path,
+        alt: list[i]?.alt?.trim() || undefined,
+        variantId: list[i]?.variantId ?? null,
+      })),
+    });
   } catch (error) {
     if (uploaded.length > 0) await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove(uploaded);
     return {

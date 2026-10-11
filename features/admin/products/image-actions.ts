@@ -10,6 +10,19 @@ import { createClient } from "@/lib/supabase/server";
 import { assertAdminAction } from "../guard";
 import { PRODUCT_IMAGE_BUCKET, isProductImagePath } from "./images";
 
+/** variant_id di product_images tidak dibatasi FK ke produk yang sama — cek di sini. */
+async function variantsBelongTo(productId: string, variantIds: (string | null | undefined)[]) {
+  const ids = [...new Set(variantIds.filter((id): id is string => Boolean(id)))];
+  if (ids.length === 0) return true;
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("product_variants")
+    .select("id", { count: "exact", head: true })
+    .eq("product_id", productId)
+    .in("id", ids);
+  return count === ids.length;
+}
+
 async function invalidate(productId: string) {
   const supabase = await createClient();
   const { data } = await supabase.from("products").select("slug").eq("id", productId).maybeSingle();
@@ -21,7 +34,13 @@ async function invalidate(productId: string) {
 const addSchema = z.object({
   productId: z.uuid(),
   images: z
-    .array(z.object({ path: z.string(), alt: z.string().trim().max(200).optional() }))
+    .array(
+      z.object({
+        path: z.string(),
+        alt: z.string().trim().max(200).optional(),
+        variantId: z.uuid().nullable().optional(),
+      }),
+    )
     .min(1)
     .max(10),
 });
@@ -36,6 +55,14 @@ export async function addProductImages(input: unknown): Promise<ActionState> {
   const { productId, images } = parsed.data;
   if (!images.every((img) => isProductImagePath(img.path, productId))) {
     return { status: "error", message: "Lokasi file tidak valid." };
+  }
+  if (
+    !(await variantsBelongTo(
+      productId,
+      images.map((img) => img.variantId),
+    ))
+  ) {
+    return { status: "error", message: "Varian tidak valid." };
   }
 
   const supabase = await createClient();
@@ -53,6 +80,7 @@ export async function addProductImages(input: unknown): Promise<ActionState> {
       product_id: productId,
       storage_path: img.path,
       alt_text: img.alt || null,
+      variant_id: img.variantId ?? null,
       sort_order: start + i,
     })),
   );
@@ -84,6 +112,17 @@ export async function updateProductImage(input: unknown): Promise<ActionState> {
   const { id, alt, variantId } = parsed.data;
 
   const supabase = await createClient();
+  if (variantId) {
+    const { data: image } = await supabase
+      .from("product_images")
+      .select("product_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (!image) return { status: "error", message: "Foto tidak ditemukan." };
+    if (!(await variantsBelongTo(image.product_id, [variantId]))) {
+      return { status: "error", message: "Varian tidak valid." };
+    }
+  }
   const patch: { alt_text?: string | null; variant_id?: string | null } = {};
   if (alt !== undefined) patch.alt_text = alt || null;
   if (variantId !== undefined) patch.variant_id = variantId;

@@ -10,7 +10,11 @@ import { createClient } from "@/lib/supabase/server";
 import { assertAdminAction } from "../guard";
 import { productFormSchema, stockAdjustments, toRpcPayload } from "./schemas";
 
-export type SaveProductResult = ActionState & { productId?: string };
+export type SaveProductResult = ActionState & {
+  productId?: string;
+  /** Produk baru: SKU → id varian, untuk menautkan foto ke varian setelah dibuat. */
+  variantIds?: Record<string, string>;
+};
 
 function invalidateProduct(...slugs: (string | undefined)[]) {
   updateTag("products");
@@ -75,7 +79,16 @@ export async function saveProduct(
   const { data: newId, error } = await supabase.rpc("admin_create_product", { payload });
   if (error) return { status: "error", message: dbErrorMessage(error) };
   invalidateProduct(parsed.data.slug);
-  return { status: "success", message: "Produk dibuat.", productId: newId };
+  const { data: created } = await supabase
+    .from("product_variants")
+    .select("id, sku")
+    .eq("product_id", newId);
+  return {
+    status: "success",
+    message: "Produk dibuat.",
+    productId: newId,
+    variantIds: Object.fromEntries((created ?? []).map((v) => [v.sku.toLowerCase(), v.id])),
+  };
 }
 
 export async function setProductActive(productId: string, isActive: boolean): Promise<ActionState> {

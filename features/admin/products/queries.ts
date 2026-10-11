@@ -14,6 +14,17 @@ export type AdminProductListParams = {
   page: number;
 };
 
+export type AdminProductRowVariant = {
+  variantId: string;
+  sku: string;
+  label: string;
+  price: number;
+  isActive: boolean;
+  quantity: number;
+  reserved: number;
+  available: number;
+};
+
 export type AdminProductRow = {
   id: string;
   name: string;
@@ -26,6 +37,8 @@ export type AdminProductRow = {
   priceMax: number | null;
   stockAvailable: number;
   lowStock: boolean;
+  /** Semua varian (aktif dulu) untuk panel stok di daftar produk. */
+  variants: AdminProductRowVariant[];
 };
 
 function escapeLike(value: string) {
@@ -39,7 +52,9 @@ export async function listAdminProducts(params: AdminProductListParams) {
   let query = supabase.from("products").select(
     `id, name, slug, is_active, category_id,
        category:categories (name),
-       variants:product_variants (id, price, is_active),
+       variants:product_variants (id, sku, price, is_active, created_at,
+         option_values:product_variant_options (
+           value:product_option_values (value, sort_order, option:product_options (sort_order)))),
        images:product_images (storage_path, sort_order, variant_id)`,
     { count: "exact" },
   );
@@ -57,20 +72,51 @@ export async function listAdminProducts(params: AdminProductListParams) {
   if (error?.code === "PGRST103") return { rows: [], total: count ?? 0, pageCount: 0 };
   if (error) throw new Error(`listAdminProducts: ${error.message}`);
 
-  const variantIds = data.flatMap((p) => p.variants.filter((v) => v.is_active).map((v) => v.id));
-  const stock = new Map<string, number>();
+  const variantIds = data.flatMap((p) => p.variants.map((v) => v.id));
+  const stock = new Map<string, { quantity: number; reserved: number; available: number }>();
   if (variantIds.length > 0) {
     const { data: stockRows, error: stockError } = await supabase.rpc("admin_get_stock", {
       variant_ids: variantIds,
     });
     if (stockError) throw new Error(`admin_get_stock: ${stockError.message}`);
-    for (const s of stockRows) stock.set(s.variant_id, s.available);
+    for (const s of stockRows) stock.set(s.variant_id, s);
   }
 
   const rows: AdminProductRow[] = data.map((p) => {
     const active = p.variants.filter((v) => v.is_active);
     const prices = active.map((v) => v.price);
-    const perVariant = active.map((v) => stock.get(v.id) ?? 0);
+    const perVariant = active.map((v) => stock.get(v.id)?.available ?? 0);
+    // Urut: aktif dulu, lalu sesuai urutan nilai opsi (Warna lalu Ukuran, dst.).
+    const withValues = p.variants.map((v) => ({
+      ...v,
+      values: v.option_values
+        .flatMap((ov) => (ov.value ? [ov.value] : []))
+        .sort((a, b) => (a.option?.sort_order ?? 0) - (b.option?.sort_order ?? 0)),
+    }));
+    const variants = withValues
+      .sort(
+        (a, b) =>
+          Number(b.is_active) - Number(a.is_active) ||
+          a.values.reduce(
+            (acc, val, i) => acc || val.sort_order - (b.values[i]?.sort_order ?? 0),
+            0,
+          ) ||
+          a.created_at.localeCompare(b.created_at),
+      )
+      .map((v) => {
+        const s = stock.get(v.id);
+        const label = v.values.map((val) => val.value).join(" / ") || "Default";
+        return {
+          variantId: v.id,
+          sku: v.sku,
+          label,
+          price: v.price,
+          isActive: v.is_active,
+          quantity: s?.quantity ?? 0,
+          reserved: s?.reserved ?? 0,
+          available: s?.available ?? 0,
+        };
+      });
     const mainImage = [...p.images]
       .sort(
         (a, b) =>
@@ -90,6 +136,7 @@ export async function listAdminProducts(params: AdminProductListParams) {
       priceMax: prices.length ? Math.max(...prices) : null,
       stockAvailable: perVariant.reduce((a, b) => a + b, 0),
       lowStock: perVariant.some((n) => n <= LOW_STOCK_THRESHOLD),
+      variants,
     };
   });
 
