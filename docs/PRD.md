@@ -26,17 +26,17 @@
 
 ## 2. Tech Stack
 
-| Kategori        | Pilihan                                   | Catatan                                                                                                                     |
-| --------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Framework       | Next.js 16.4 App Router                   | Server Components default; `"use client"` hanya bila perlu.                                                                 |
-| Supabase client | `@supabase/ssr` + `@supabase/supabase-js` | 3 client: browser, server (cookie), admin (service role, server-only).                                                      |
-| State client    | Zustand                                   | Guest cart, filter, UI state.                                                                                               |
-| Server state    | TanStack Query                            | **Ditunda.** Mulai dengan Server Components + Server Actions; tambah hanya untuk interaksi yang butuh cache/polling client. |
-| Form + validasi | React Hook Form + Zod                     | Skema Zod dipakai ulang di Server Action (validasi ulang di server wajib).                                                  |
-| UI              | shadcn/ui + Tailwind CSS v4               |                                                                                                                             |
-| Toast           | Sonner                                    |                                                                                                                             |
-| Tabel admin     | TanStack Table                            |                                                                                                                             |
-| i18n            | next-intl                                 | Opsional, di luar MVP.                                                                                                      |
+| Kategori        | Pilihan                                           | Catatan                                                                                                                     |
+| --------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Framework       | Next.js 16.4 App Router                           | Server Components default; `"use client"` hanya bila perlu.                                                                 |
+| Supabase client | `@supabase/ssr` + `@supabase/supabase-js`         | 3 client: browser, server (cookie), admin (service role, server-only).                                                      |
+| State client    | Zustand                                           | Guest cart, filter, UI state.                                                                                               |
+| Server state    | TanStack Query                                    | **Ditunda.** Mulai dengan Server Components + Server Actions; tambah hanya untuk interaksi yang butuh cache/polling client. |
+| Form + validasi | React Hook Form + Zod                             | Skema Zod dipakai ulang di Server Action (validasi ulang di server wajib).                                                  |
+| UI              | shadcn/ui + Tailwind CSS v4                       |                                                                                                                             |
+| Toast           | Sonner                                            |                                                                                                                             |
+| Tabel admin     | Tabel server-rendered (filter & paginasi via URL) | TanStack Table ditunda; tambahkan bila butuh sorting/seleksi di client.                                                     |
+| i18n            | next-intl                                         | Opsional, di luar MVP.                                                                                                      |
 
 ---
 
