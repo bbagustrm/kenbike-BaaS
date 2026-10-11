@@ -4,6 +4,10 @@ insert into auth.users (id, email, aud, role) values
   ('00000000-0000-0000-0000-00000000000a', 'a@test.local', 'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-0000000000ad', 'admin@test.local', 'authenticated', 'authenticated');
 update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000000ad';
+-- Tes "admin terakhir" butuh tepat satu admin: turunkan admin nyata di DB dev
+-- untuk sementara (transaksi tes di-rollback, data asli tidak berubah).
+update public.profiles set role = 'customer'
+where role = 'admin' and id <> '00000000-0000-0000-0000-0000000000ad';
 
 create temp table _ctx (key text primary key, id uuid) on commit drop;
 grant all on _ctx to public;
