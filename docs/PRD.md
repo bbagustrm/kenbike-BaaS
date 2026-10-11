@@ -8,17 +8,17 @@
 
 ## 1. Overview Infrastruktur
 
-| Komponen | Layanan | Keterangan |
-|---|---|---|
-| App (UI + server logic) | Next.js 16.4, React 19 | Server Components untuk baca data, Server Actions untuk mutasi, Route Handlers untuk webhook. |
-| Database | Supabase PostgreSQL | Migrasi via **Supabase CLI** (`supabase/migrations`). Tipe TS digenerate (`supabase gen types`). |
-| Auth | Supabase Auth | Session cookie via `@supabase/ssr`. |
-| Storage | Supabase Storage | Bucket `product-images` (publik). |
-| Job terjadwal | `pg_cron` (Supabase) | Release reservasi stok kadaluarsa. |
-| Payment | Midtrans Snap | Dipanggil hanya dari server. |
-| Shipping | Biteship | Cek ongkir, create order, tracking via webhook. |
-| Hosting | Vercel | Region app dekat region Supabase (Singapore). |
-| Package manager | **bun** | Sesuai `packageManager` di `package.json`. |
+| Komponen                | Layanan                | Keterangan                                                                                       |
+| ----------------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
+| App (UI + server logic) | Next.js 16.4, React 19 | Server Components untuk baca data, Server Actions untuk mutasi, Route Handlers untuk webhook.    |
+| Database                | Supabase PostgreSQL    | Migrasi via **Supabase CLI** (`supabase/migrations`). Tipe TS digenerate (`supabase gen types`). |
+| Auth                    | Supabase Auth          | Session cookie via `@supabase/ssr`.                                                              |
+| Storage                 | Supabase Storage       | Bucket `product-images` (publik).                                                                |
+| Job terjadwal           | `pg_cron` (Supabase)   | Release reservasi stok kadaluarsa.                                                               |
+| Payment                 | Midtrans Snap          | Dipanggil hanya dari server.                                                                     |
+| Shipping                | Biteship               | Cek ongkir, create order, tracking via webhook.                                                  |
+| Hosting                 | Vercel                 | Region app dekat region Supabase (Singapore).                                                    |
+| Package manager         | **bun**                | Sesuai `packageManager` di `package.json`.                                                       |
 
 > **Next.js 16:** `middleware.ts` sudah berganti nama menjadi **`proxy.ts`**. Selalu cek `node_modules/next/dist/docs/` sebelum memakai API Next (lihat `AGENTS.md`) — versi ini punya breaking changes.
 
@@ -26,17 +26,17 @@
 
 ## 2. Tech Stack
 
-| Kategori | Pilihan | Catatan |
-|---|---|---|
-| Framework | Next.js 16.4 App Router | Server Components default; `"use client"` hanya bila perlu. |
-| Supabase client | `@supabase/ssr` + `@supabase/supabase-js` | 3 client: browser, server (cookie), admin (service role, server-only). |
-| State client | Zustand | Guest cart, filter, UI state. |
-| Server state | TanStack Query | **Ditunda.** Mulai dengan Server Components + Server Actions; tambah hanya untuk interaksi yang butuh cache/polling client. |
-| Form + validasi | React Hook Form + Zod | Skema Zod dipakai ulang di Server Action (validasi ulang di server wajib). |
-| UI | shadcn/ui + Tailwind CSS v4 | |
-| Toast | Sonner | |
-| Tabel admin | TanStack Table | |
-| i18n | next-intl | Opsional, di luar MVP. |
+| Kategori        | Pilihan                                   | Catatan                                                                                                                     |
+| --------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Framework       | Next.js 16.4 App Router                   | Server Components default; `"use client"` hanya bila perlu.                                                                 |
+| Supabase client | `@supabase/ssr` + `@supabase/supabase-js` | 3 client: browser, server (cookie), admin (service role, server-only).                                                      |
+| State client    | Zustand                                   | Guest cart, filter, UI state.                                                                                               |
+| Server state    | TanStack Query                            | **Ditunda.** Mulai dengan Server Components + Server Actions; tambah hanya untuk interaksi yang butuh cache/polling client. |
+| Form + validasi | React Hook Form + Zod                     | Skema Zod dipakai ulang di Server Action (validasi ulang di server wajib).                                                  |
+| UI              | shadcn/ui + Tailwind CSS v4               |                                                                                                                             |
+| Toast           | Sonner                                    |                                                                                                                             |
+| Tabel admin     | TanStack Table                            |                                                                                                                             |
+| i18n            | next-intl                                 | Opsional, di luar MVP.                                                                                                      |
 
 ---
 
@@ -53,6 +53,7 @@
 **Di luar MVP:** review, voucher/kupon, wishlist, refund otomatis (refund dilakukan manual di dashboard Midtrans), email notifikasi (kecuali email auth bawaan Supabase), multi-gudang, role staff, i18n.
 
 ### 3.1 Autentikasi & Keamanan
+
 - Auth via Supabase; session di-refresh di `proxy.ts` (optimistic redirect untuk `/admin`, `/checkout`, `/account`).
 - **`proxy.ts` bukan otorisasi.** Otorisasi nyata = cek `supabase.auth.getUser()` di setiap Server Action / Route Handler **+ RLS**. Jangan pakai `getSession()` untuk keputusan keamanan di server.
 - **Metode login:** email + password (wajib konfirmasi email) dan Google OAuth. Keduanya kembali lewat `app/(auth)/auth/callback/route.ts` (`exchangeCodeForSession`), lalu guest cart di-merge. Akun Google dan email yang sama ditautkan otomatis oleh Supabase (identity linking) bila email terverifikasi.
@@ -62,11 +63,13 @@
 - Secret (`SUPABASE_SERVICE_ROLE_KEY`, `MIDTRANS_SERVER_KEY`, `BITESHIP_API_KEY`) hanya diakses modul `server-only`.
 
 ### 3.2 Katalog
+
 - Produk punya ≥ 1 varian (harga/stok/SKU/berat/dimensi di varian). Opsi varian dinamis (Warna, Ukuran, dst).
 - Hapus produk = soft delete (`is_active = false`).
 - Pencarian: `pg_trgm` pada `products.name`.
 
 ### 3.3 Cart
+
 - **Guest:** Zustand + localStorage.
 - **Login:** tabel `carts`/`cart_items`. Saat login, cart lokal di-merge lewat RPC `merge_guest_cart`.
 - Harga **tidak pernah** dipercaya dari client; selalu diambil dari DB saat checkout.
@@ -74,6 +77,7 @@
 - **Cart dikosongkan saat order dibuat** (di dalam `create_order`). Jika order expired/dibatalkan, user belanja ulang (opsional nanti: tombol "beli lagi" dari detail order).
 
 ### 3.4 Manajemen Stok (model reservasi)
+
 - Stok tersedia = `product_variants.quantity` − reservasi `reserved` yang belum kadaluarsa. Customer membacanya lewat RPC `get_variant_availability()`; angka stok fisik tidak terbuka ke publik.
 - `create_order` (RPC, satu transaksi, **hanya service role**): kunci varian `FOR UPDATE` → cek stok → insert order + items + reservasi + snapshot alamat → kosongkan cart. Stok fisik **belum** berkurang.
 - Bayar sukses → reservasi `confirmed` dan `quantity` dikurangi.
@@ -82,14 +86,16 @@
 
 #### Parameter expiry
 
-| Parameter | Nilai | Keterangan |
-|---|---|---|
-| `ORDER_TTL` | **24 jam** | `orders.expires_at = created_at + 24j`. Selama ini stok di-reserve. |
-| `PAYMENT_BUFFER` | **15 menit** | Expiry Snap selalu berakhir ≥ 15 menit sebelum order expired, agar webhook yang telat tetap masuk sebelum stok dilepas. |
-| Expiry Snap per attempt | `MIN(now() + 23j45m, orders.expires_at − 15m)` | Retry bayar **tidak** memperpanjang `orders.expires_at`. Bila sisa waktu < 15 menit, retry ditolak. |
+| Parameter               | Nilai                                          | Keterangan                                                                                                              |
+| ----------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `ORDER_TTL`             | **24 jam**                                     | `orders.expires_at = created_at + 24j`. Selama ini stok di-reserve.                                                     |
+| `PAYMENT_BUFFER`        | **15 menit**                                   | Expiry Snap selalu berakhir ≥ 15 menit sebelum order expired, agar webhook yang telat tetap masuk sebelum stok dilepas. |
+| Expiry Snap per attempt | `MIN(now() + 23j45m, orders.expires_at − 15m)` | Retry bayar **tidak** memperpanjang `orders.expires_at`. Bila sisa waktu < 15 menit, retry ditolak.                     |
 
 #### Bayar telat (settlement untuk order yang sudah `expired`)
+
 Kasus langka (mis. webhook Midtrans sangat terlambat):
+
 1. Webhook mencoba **reserve ulang** stok (kunci `FOR UPDATE`).
 2. Stok cukup → proses normal (`paid`, stok dikurangi, buat pengiriman).
 3. Stok tidak cukup → `payment_status = paid`, `attention_reason = late_payment_out_of_stock`, tidak dikirim; admin melakukan **refund manual**.
@@ -118,6 +124,7 @@ Transisi di luar tabel ini ditolak (ditegakkan di RPC/handler). Nilai mentah pro
    - Bila tetap terjadi dua settlement untuk satu order (race sangat jarang): attempt kedua dicatat dan order diberi `attention_reason = duplicate_payment` untuk refund manual.
 
 ### 3.7 Webhook — aturan wajib
+
 - Verifikasi signature Midtrans: `SHA512(order_id + status_code + gross_amount + ServerKey)` (modul `crypto` Node).
 - Biteship: verifikasi lewat secret yang kita pasang di URL/header webhook (cek dokumentasi Biteship saat implementasi); jangan percaya payload mentah.
 - Idempoten, cepat (< beberapa detik, ingat batas durasi function Vercel), selalu balas 2xx untuk event yang sudah diproses.
@@ -128,6 +135,7 @@ Transisi di luar tabel ini ditolak (ditegakkan di RPC/handler). Nilai mentah pro
 ## 4. Environment Variables
 
 `.env.local` (jangan di-commit; sediakan `.env.example`):
+
 ```env
 # Supabase (public)
 NEXT_PUBLIC_SUPABASE_URL=https://[PROJECT_REF].supabase.co
@@ -152,6 +160,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ---
 
 ## 5. Pengembangan & Deployment
+
 - **Lokal:** Supabase CLI (`supabase start`) untuk DB lokal; migrasi di `supabase/migrations`; `supabase gen types typescript` → `types/database.types.ts`.
 - **Webhook lokal:** tunnel (mis. ngrok/cloudflared) untuk menerima callback Midtrans/Biteship.
 - **Produksi:** Vercel (auto-deploy branch `main`) + proyek Supabase terpisah dari dev. Migrasi dijalankan lewat `supabase db push`.
@@ -173,4 +182,4 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 8. Webhook Midtrans & Biteship, riwayat order, tracking.
 9. Admin order management, hardening (checklist RLS), deploy.
 
-*(Dokumen hidup — perbarui seiring pengembangan.)*
+_(Dokumen hidup — perbarui seiring pengembangan.)_

@@ -6,13 +6,13 @@ Satu aplikasi: UI, Server Actions, dan webhook berada di repo ini — tidak ada 
 
 ## Dokumentasi
 
-| Dokumen | Isi |
-|---|---|
-| [docs/PRD.md](docs/PRD.md) | Scope MVP, alur checkout, model stok, state machine order |
-| [docs/ERD-ecommerce.dbml](docs/ERD-ecommerce.dbml) | Skema database (paste ke [dbdiagram.io](https://dbdiagram.io)) |
-| [docs/RLS-POLICIES.md](docs/RLS-POLICIES.md) | Row Level Security & RPC per tabel |
-| [docs/FE-STRUCTURE-FOLDER.md](docs/FE-STRUCTURE-FOLDER.md) | Struktur folder, pola data & caching |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Urutan kerja per milestone |
+| Dokumen                                                    | Isi                                                            |
+| ---------------------------------------------------------- | -------------------------------------------------------------- |
+| [docs/PRD.md](docs/PRD.md)                                 | Scope MVP, alur checkout, model stok, state machine order      |
+| [docs/ERD-ecommerce.dbml](docs/ERD-ecommerce.dbml)         | Skema database (paste ke [dbdiagram.io](https://dbdiagram.io)) |
+| [docs/RLS-POLICIES.md](docs/RLS-POLICIES.md)               | Row Level Security & RPC per tabel                             |
+| [docs/FE-STRUCTURE-FOLDER.md](docs/FE-STRUCTURE-FOLDER.md) | Struktur folder, pola data & caching                           |
+| [docs/ROADMAP.md](docs/ROADMAP.md)                         | Urutan kerja per milestone                                     |
 
 Status pekerjaan: [GitHub Project](https://github.com/users/bbagustrm/projects/11).
 
@@ -34,14 +34,14 @@ Buka http://localhost:3000.
 
 ## Scripts
 
-| Script | Fungsi |
-|---|---|
-| `bun dev` | Development server |
-| `bun run build` | Build produksi |
-| `bun run lint` | ESLint |
-| `bun run typecheck` | Pemeriksaan TypeScript |
-| `bun run test` | Unit test (Vitest) |
-| `bun run format` / `format:check` | Prettier |
+| Script                            | Fungsi                 |
+| --------------------------------- | ---------------------- |
+| `bun dev`                         | Development server     |
+| `bun run build`                   | Build produksi         |
+| `bun run lint`                    | ESLint                 |
+| `bun run typecheck`               | Pemeriksaan TypeScript |
+| `bun run test`                    | Unit test (Vitest)     |
+| `bun run format` / `format:check` | Prettier               |
 
 ## Konvensi Kontribusi
 

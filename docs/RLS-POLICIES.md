@@ -46,30 +46,31 @@ grant execute on function public.is_admin() to authenticated;
 
 `R` = SELECT, `W` = INSERT/UPDATE/DELETE, `—` = tidak ada akses langsung, `own` = baris milik `auth.uid()`, `SR` = hanya service role (server).
 
-| Tabel | anon | customer | admin | Penulis lain |
-|---|---|---|---|---|
-| profiles | — | R own, U own (kolom terbatas) | R semua | trigger (insert), RPC `admin_set_role` |
-| addresses | — | R/W own | R | |
-| store_settings | — | — | R/W | dibaca SR untuk Biteship |
-| categories | R | R | R/W | |
-| products | R (aktif) | R (aktif) | R/W | |
-| product_options / values / variant_options | R | R | R/W | |
-| product_variants | R (aktif, **tanpa `quantity`**) | sama | R/W (tanpa `quantity`) | stok via RPC |
-| product_images | R | R | R/W | |
-| carts / cart_items | — | R/W own | — | `create_order` (kosongkan) |
-| orders | — | R own | R | SR |
-| order_items | — | R own | R | SR |
-| payments | — | R own (via view) | R | SR |
-| stock_reservations | — | — | R | SR / pg_cron |
-| order_status_history | — | R own (via view) | R | SR |
-| order_internal_notes | — | — | R + insert | |
-| shipments | — | R own | R/U | SR (insert) |
+| Tabel                                      | anon                            | customer                      | admin                  | Penulis lain                           |
+| ------------------------------------------ | ------------------------------- | ----------------------------- | ---------------------- | -------------------------------------- |
+| profiles                                   | —                               | R own, U own (kolom terbatas) | R semua                | trigger (insert), RPC `admin_set_role` |
+| addresses                                  | —                               | R/W own                       | R                      |                                        |
+| store_settings                             | —                               | —                             | R/W                    | dibaca SR untuk Biteship               |
+| categories                                 | R                               | R                             | R/W                    |                                        |
+| products                                   | R (aktif)                       | R (aktif)                     | R/W                    |                                        |
+| product_options / values / variant_options | R                               | R                             | R/W                    |                                        |
+| product_variants                           | R (aktif, **tanpa `quantity`**) | sama                          | R/W (tanpa `quantity`) | stok via RPC                           |
+| product_images                             | R                               | R                             | R/W                    |                                        |
+| carts / cart_items                         | —                               | R/W own                       | —                      | `create_order` (kosongkan)             |
+| orders                                     | —                               | R own                         | R                      | SR                                     |
+| order_items                                | —                               | R own                         | R                      | SR                                     |
+| payments                                   | —                               | R own (via view)              | R                      | SR                                     |
+| stock_reservations                         | —                               | —                             | R                      | SR / pg_cron                           |
+| order_status_history                       | —                               | R own (via view)              | R                      | SR                                     |
+| order_internal_notes                       | —                               | —                             | R + insert             |                                        |
+| shipments                                  | —                               | R own                         | R/U                    | SR (insert)                            |
 
 ---
 
 ## 4. Policy per Tabel
 
 ### profiles
+
 ```sql
 alter table public.profiles enable row level security;
 
@@ -86,11 +87,13 @@ create policy "profiles_update_own" on public.profiles
 revoke insert, update, delete on public.profiles from anon, authenticated;
 grant update (full_name, phone, avatar_url) on public.profiles to authenticated;
 ```
+
 - **INSERT:** tidak ada grant/policy → hanya trigger `handle_new_user()` (security definer) pada `auth.users`.
 - **Ubah role:** hanya RPC `admin_set_role(user_id, role)` (security definer, cek `is_admin()` di dalam fungsi, tolak menurunkan diri sendiri bila dia admin terakhir).
 - **Admin pertama:** manual via SQL Editor Supabase (lihat PRD §3.1).
 
 ### addresses
+
 ```sql
 alter table public.addresses enable row level security;
 
@@ -104,6 +107,7 @@ create policy "addresses_admin_select" on public.addresses
 ```
 
 ### store_settings
+
 ```sql
 alter table public.store_settings enable row level security;
 
@@ -113,7 +117,9 @@ create policy "store_settings_admin_all" on public.store_settings
 ```
 
 ### Katalog: categories, products, product_options, product_option_values, product_variant_options, product_images
+
 Pola: publik membaca, admin menulis.
+
 ```sql
 alter table public.categories enable row level security;
 create policy "categories_public_read" on public.categories
@@ -130,9 +136,11 @@ create policy "products_admin_write" on public.products
   for all to authenticated
   using ((select public.is_admin())) with check ((select public.is_admin()));
 ```
+
 `product_options`, `product_option_values`, `product_variant_options`, `product_images`: SELECT publik bila produk induk aktif (`exists (... p.is_active)`) atau admin; tulis hanya admin. Pembuatan produk baru tetap lewat RPC `admin_create_product` agar ≥ 1 varian terjamin.
 
 ### product_variants (stok disembunyikan)
+
 ```sql
 alter table public.product_variants enable row level security;
 
@@ -156,11 +164,13 @@ grant insert (product_id, sku, price, weight_gram, length_cm, width_cm, height_c
       update (sku, price, weight_gram, length_cm, width_cm, height_cm, is_active)
   on public.product_variants to authenticated;
 ```
+
 - **Customer** membaca ketersediaan via `get_variant_availability(variant_ids uuid[])` → `(variant_id, available int)`, atau cukup `in_stock boolean` bila tak ingin angka pasti terlihat.
 - **Admin** membaca stok fisik via `admin_get_stock(variant_ids)` dan mengubahnya **hanya** via `admin_adjust_stock(variant_id, delta, reason)` (semua perubahan stok tercatat).
 - ⚠️ Konsekuensi: di app jangan pakai `select('*')` pada `product_variants` dan jangan `.update().select('*')` — sebutkan kolom secara eksplisit.
 
 ### carts & cart_items
+
 ```sql
 alter table public.carts enable row level security;
 create policy "carts_own_all" on public.carts
@@ -174,9 +184,11 @@ create policy "cart_items_own_all" on public.cart_items
   using (exists (select 1 from public.carts c where c.id = cart_id and c.profile_id = (select auth.uid())))
   with check (exists (select 1 from public.carts c where c.id = cart_id and c.profile_id = (select auth.uid())));
 ```
+
 Cart dibuat oleh trigger `handle_new_user()`. Validasi stok/varian aktif dilakukan saat checkout (cart boleh berisi item yang kemudian habis; UI menandainya).
 
 ### orders
+
 ```sql
 alter table public.orders enable row level security;
 
@@ -189,6 +201,7 @@ create policy "orders_select_admin" on public.orders
 ```
 
 ### order_items
+
 ```sql
 alter table public.order_items enable row level security;
 
@@ -201,6 +214,7 @@ create policy "order_items_select_admin" on public.order_items
 ```
 
 ### payments
+
 ```sql
 alter table public.payments enable row level security;
 
@@ -216,9 +230,11 @@ create view public.my_payments with (security_invoker = false) as
 revoke all on public.my_payments from anon;
 grant select on public.my_payments to authenticated;
 ```
+
 > `snap_token` dibutuhkan untuk membuka ulang popup Snap attempt yang masih pending.
 
 ### stock_reservations
+
 ```sql
 alter table public.stock_reservations enable row level security;
 create policy "stock_res_select_admin" on public.stock_reservations
@@ -226,6 +242,7 @@ create policy "stock_res_select_admin" on public.stock_reservations
 ```
 
 ### order_status_history
+
 ```sql
 alter table public.order_status_history enable row level security;
 create policy "history_select_admin" on public.order_status_history
@@ -242,6 +259,7 @@ grant select on public.my_order_timeline to authenticated;
 ```
 
 ### order_internal_notes
+
 ```sql
 alter table public.order_internal_notes enable row level security;
 
@@ -255,6 +273,7 @@ create policy "notes_admin_insert" on public.order_internal_notes
 ```
 
 ### shipments
+
 ```sql
 alter table public.shipments enable row level security;
 
@@ -276,6 +295,7 @@ create policy "shipments_admin_update" on public.shipments
 ## 5. Supabase Storage
 
 Bucket `product-images`:
+
 - **public** (dibaca siapa saja).
 - `storage.objects`: `INSERT/UPDATE/DELETE` hanya jika `bucket_id = 'product-images' and (select public.is_admin())`.
 - Batasi MIME (`image/jpeg, image/png, image/webp`) & ukuran (mis. 5 MB) di konfigurasi bucket.
@@ -284,21 +304,22 @@ Bucket `product-images`:
 
 ## 6. RPC
 
-| RPC | Execute oleh | Fungsi |
-|---|---|---|
-| `get_variant_availability(variant_ids uuid[])` | anon, authenticated | Stok tersedia (fisik − reservasi aktif). Security definer, read-only. |
-| `get_or_create_cart()` | authenticated | Pakai `auth.uid()` di dalam fungsi. |
-| `merge_guest_cart(items jsonb)` | authenticated | Pakai `auth.uid()`; validasi varian aktif; quantity dibatasi wajar. |
-| `cancel_order(order_id)` | authenticated | Hanya pemilik & `pending_payment`; release reservasi. (Server Action juga membatalkan attempt Midtrans.) |
-| `admin_create_product(...)` / `admin_update_product(...)` | authenticated (cek `is_admin()` di dalam) | Produk + varian + opsi dalam 1 transaksi. |
-| `admin_get_stock(variant_ids)` / `admin_adjust_stock(variant_id, delta, reason)` | authenticated (cek `is_admin()`) | Satu-satunya jalur baca/ubah stok fisik. |
-| `admin_set_role(user_id, role)` | authenticated (cek `is_admin()`) | Satu-satunya jalur mengubah role. |
-| **`create_order(profile_id, address_id, courier_code, courier_service, shipping_cost)`** | **service_role saja** | Dipanggil Server Action setelah `getUser()` + hitung ulang ongkir Biteship. Harga dari DB, kunci `FOR UPDATE`, reservasi, snapshot, kosongkan cart. |
-| `confirm_payment(order_id, ...)` | service_role | Reservasi → confirmed + kurangi stok; menangani kasus bayar-telat (reserve ulang / `attention_reason`). |
-| `release_reservations(order_id)` | service_role | |
-| `expire_pending_orders()` | service_role (pg_cron) | Release reservasi kadaluarsa + set `expired`. |
+| RPC                                                                                      | Execute oleh                              | Fungsi                                                                                                                                              |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_variant_availability(variant_ids uuid[])`                                           | anon, authenticated                       | Stok tersedia (fisik − reservasi aktif). Security definer, read-only.                                                                               |
+| `get_or_create_cart()`                                                                   | authenticated                             | Pakai `auth.uid()` di dalam fungsi.                                                                                                                 |
+| `merge_guest_cart(items jsonb)`                                                          | authenticated                             | Pakai `auth.uid()`; validasi varian aktif; quantity dibatasi wajar.                                                                                 |
+| `cancel_order(order_id)`                                                                 | authenticated                             | Hanya pemilik & `pending_payment`; release reservasi. (Server Action juga membatalkan attempt Midtrans.)                                            |
+| `admin_create_product(...)` / `admin_update_product(...)`                                | authenticated (cek `is_admin()` di dalam) | Produk + varian + opsi dalam 1 transaksi.                                                                                                           |
+| `admin_get_stock(variant_ids)` / `admin_adjust_stock(variant_id, delta, reason)`         | authenticated (cek `is_admin()`)          | Satu-satunya jalur baca/ubah stok fisik.                                                                                                            |
+| `admin_set_role(user_id, role)`                                                          | authenticated (cek `is_admin()`)          | Satu-satunya jalur mengubah role.                                                                                                                   |
+| **`create_order(profile_id, address_id, courier_code, courier_service, shipping_cost)`** | **service_role saja**                     | Dipanggil Server Action setelah `getUser()` + hitung ulang ongkir Biteship. Harga dari DB, kunci `FOR UPDATE`, reservasi, snapshot, kosongkan cart. |
+| `confirm_payment(order_id, ...)`                                                         | service_role                              | Reservasi → confirmed + kurangi stok; menangani kasus bayar-telat (reserve ulang / `attention_reason`).                                             |
+| `release_reservations(order_id)`                                                         | service_role                              |                                                                                                                                                     |
+| `expire_pending_orders()`                                                                | service_role (pg_cron)                    | Release reservasi kadaluarsa + set `expired`.                                                                                                       |
 
 Template grant:
+
 ```sql
 -- fungsi khusus server
 revoke execute on function public.create_order(uuid, uuid, text, text, bigint) from public, anon, authenticated;
