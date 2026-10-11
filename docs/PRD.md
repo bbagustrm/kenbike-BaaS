@@ -55,8 +55,8 @@
 ### 3.1 Autentikasi & Keamanan
 
 - Auth via Supabase; session di-refresh di `proxy.ts` (optimistic redirect untuk `/admin`, `/checkout`, `/account`).
-- **`proxy.ts` bukan otorisasi.** Otorisasi nyata = cek `supabase.auth.getUser()` di setiap Server Action / Route Handler **+ RLS**. Jangan pakai `getSession()` untuk keputusan keamanan di server.
-- **Metode login:** email + password (wajib konfirmasi email) dan Google OAuth. Keduanya kembali lewat `app/(auth)/auth/callback/route.ts` (`exchangeCodeForSession`), lalu guest cart di-merge. Akun Google dan email yang sama ditautkan otomatis oleh Supabase (identity linking) bila email terverifikasi.
+- **`proxy.ts` bukan otorisasi.** Otorisasi nyata = verifikasi session di setiap Server Action / Route Handler (`getCurrentUser()` / `requireUser()` / `requireAdmin()` di `lib/auth/session.ts`, yang memakai `supabase.auth.getClaims()` — memverifikasi tanda tangan JWT) **+ RLS**. Jangan pakai `getSession()` untuk keputusan keamanan di server.
+- **Metode login:** email + password (wajib konfirmasi email) dan Google OAuth. Google OAuth dan tautan email bawaan (PKCE) kembali lewat `app/(auth)/auth/callback/route.ts` (`exchangeCodeForSession`); tautan dari template kustom (`supabase/templates/`) memakai `app/(auth)/auth/confirm/route.ts` (`verifyOtp` + `token_hash`) yang tetap berhasil walau dibuka di browser lain. Setelah login, guest cart di-merge (M4). Akun Google dan email yang sama ditautkan otomatis oleh Supabase (identity linking) bila email terverifikasi.
 - `profiles` dibuat trigger `handle_new_user()` saat signup (mengisi `full_name`/`avatar_url` dari metadata Google bila ada). `role` (`customer | admin`) **tidak bisa diubah user sendiri**.
 - **Admin pertama** dibuat manual: daftar seperti user biasa, lalu jalankan `update public.profiles set role = 'admin' where id = '<uuid>'` di SQL Editor Supabase. Admin berikutnya via RPC `admin_set_role`.
 - Detail policy per tabel: [RLS-POLICIES.md](RLS-POLICIES.md).
@@ -111,7 +111,7 @@ Transisi di luar tabel ini ditolak (ditegakkan di RPC/handler). Nilai mentah pro
 ### 3.6 Alur Checkout
 
 1. Customer pilih alamat → Server Action memanggil Biteship **rates** (origin dari `store_settings`, destination dari alamat, berat/dimensi dari varian) → customer pilih kurir/layanan.
-2. Server Action: `getUser()` → validasi Zod → **hitung ulang ongkir ke Biteship di server** untuk kurir yang dipilih → panggil RPC `create_order` memakai **admin client** (service role) dengan `profile_id` dari session, bukan dari client.
+2. Server Action: `requireUser()` → validasi Zod → **hitung ulang ongkir ke Biteship di server** untuk kurir yang dipilih → panggil RPC `create_order` memakai **admin client** (service role) dengan `profile_id` dari session, bukan dari client.
    - `create_order` di-`revoke execute` dari `anon`/`authenticated`. Kalau tidak, user bisa memanggilnya langsung via PostgREST (`/rest/v1/rpc/create_order`) dengan `shipping_cost = 0`.
 3. Server Action membuat `payments` row baru dengan `gateway_order_id` unik dan expiry sesuai §3.4, lalu menembak Midtrans Snap → simpan `snap_token` → return ke client.
    - **Jika Midtrans gagal (error teknis):** order tetap `pending_payment`, stok tetap ter-reserve sampai expiry; user melihat tombol "Coba bayar lagi". Attempt yang gagal ditandai `failure`.
@@ -164,7 +164,8 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 - **Lokal:** Supabase CLI (`supabase start`) untuk DB lokal; migrasi di `supabase/migrations`; `supabase gen types typescript` → `types/database.types.ts`.
 - **Webhook lokal:** tunnel (mis. ngrok/cloudflared) untuk menerima callback Midtrans/Biteship.
 - **Produksi:** Vercel (auto-deploy branch `main`) + proyek Supabase terpisah dari dev. Migrasi dijalankan lewat `supabase db push`.
-- **Google OAuth:** buat OAuth Client di Google Cloud Console, isi Client ID/Secret di Supabase Dashboard → Auth → Providers → Google; daftarkan redirect URL `<SITE_URL>/auth/callback` (lokal & produksi) di Supabase → Auth → URL Configuration.
+- **Google OAuth:** buat OAuth Client di Google Cloud Console, isi Client ID/Secret di Supabase Dashboard → Auth → Providers → Google; di Google Cloud Console isi _Authorized redirect URI_ `https://<project-ref>.supabase.co/auth/v1/callback`. Di Supabase → Auth → URL Configuration: Site URL = `NEXT_PUBLIC_SITE_URL`, Redirect URLs berisi `<SITE_URL>/**` (lokal & produksi).
+- **Template email:** salin `supabase/templates/*.html` (beserta subject di `supabase/config.toml`) ke Supabase → Auth → Emails agar tautan memakai `/auth/confirm`.
 - **Testing:** unit (Vitest) untuk util/skema Zod/signature; uji RLS dengan 3 identitas (anon, customer, admin); uji RPC `create_order` untuk race condition (dua checkout bersamaan, stok 1); uji skenario bayar-telat dan webhook duplikat.
 - **Observability:** log error webhook; halaman admin "order perlu tindakan".
 

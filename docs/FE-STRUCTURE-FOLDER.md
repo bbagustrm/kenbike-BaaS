@@ -51,7 +51,8 @@ kenbike-baas/
 │   ├── (auth)/                     # Route group auth
 │   │   ├── login/page.tsx
 │   │   ├── register/page.tsx
-│   │   └── auth/callback/route.ts  # exchangeCodeForSession (konfirmasi email & Google OAuth), lalu merge guest cart
+│   │   ├── auth/callback/route.ts  # exchangeCodeForSession (Google OAuth & tautan email PKCE)
+│   │   └── auth/confirm/route.ts   # verifyOtp(token_hash) untuk tautan dari supabase/templates
 │   ├── (admin)/
 │   │   └── admin/
 │   │       ├── layout.tsx          # Cek role admin di server (requireAdmin)
@@ -102,7 +103,7 @@ kenbike-baas/
 │       ├── products/               # form produk+varian, tabel, upload gambar
 │       ├── orders/                 # tabel order, detail, catatan internal, retry Biteship
 │       ├── categories/
-│       └── guards.ts               # requireAdmin() — dipanggil di layout DAN di tiap Server Action admin
+│       └── …                       # guard: requireAdmin() dari lib/auth/session.ts, dipanggil di layout DAN tiap Server Action admin
 │
 ├── components/
 │   ├── ui/                         # shadcn/ui (di-generate CLI; jangan diubah sembarangan)
@@ -110,6 +111,11 @@ kenbike-baas/
 │   └── shared/                     # PriceTag, QuantitySelector, EmptyState, ThemeToggle, DataTable
 │
 ├── lib/
+│   ├── auth/
+│   │   ├── session.ts              # DAL: getCurrentUser() (getClaims + profile, React cache), requireUser(), requireAdmin()
+│   │   └── redirect.ts             # safeNextPath() — cegah open redirect pada ?next=
+│   ├── action-state.ts             # tipe ActionState untuk useActionState (aman diimpor client)
+│   ├── validation.ts               # helper Zod untuk Server Action (validationError, formDataToObject)
 │   ├── supabase/
 │   │   ├── client.ts               # createBrowserClient (anon)
 │   │   ├── server.ts               # createServerClient (cookies) — untuk RSC/Actions
@@ -193,7 +199,7 @@ Komponen dari CommerCN (cart, checkout, product-card, dst) diperlakukan sebagai 
 
 - **Baca:** fungsi di `features/<x>/queries.ts` (server) → dipanggil dari `page.tsx`. Gunakan tipe dari `types/database.types.ts`.
 - **Tulis:** Server Action di `features/<x>/actions.ts`:
-  1. `getUser()` → tolak jika belum login / bukan role yang sesuai,
+  1. `getCurrentUser()` / `requireAdmin()` → tolak jika belum login / bukan role yang sesuai,
   2. validasi Zod,
   3. panggil RPC/insert (RLS aktif),
   4. invalidasi cache: **`updateTag(tag)`** (Next 16, khusus Server Action — user langsung melihat datanya) atau `revalidatePath`,
@@ -245,7 +251,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 - 🔲 `bun add @supabase/ssr @supabase/supabase-js zod react-hook-form @hookform/resolvers zustand sonner server-only`
 - 🔲 `bunx shadcn@latest init` (pastikan alias `ui` → `@/components/ui`)
-- 🔲 Buat `lib/supabase/*`, `proxy.ts`, `lib/env/*`, `.env.example`
+- ✅ `lib/supabase/*`, `proxy.ts`, `lib/env/*`, `.env.example`
 - 🔲 `supabase init`, tulis migrasi (enum → tabel → trigger → RLS → RPC), `supabase gen types`
 - 🔲 Auth → Katalog → Cart → Alamat → Checkout → Webhook → Admin (lihat PRD §6)
 
