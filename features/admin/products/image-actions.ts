@@ -8,7 +8,9 @@ import { dbErrorMessage } from "@/lib/db-errors";
 import { createClient } from "@/lib/supabase/server";
 
 import { assertAdminAction } from "../guard";
-import { PRODUCT_IMAGE_BUCKET, isProductImagePath } from "./images";
+import { PRODUCT_IMAGE_BUCKET } from "@/lib/product-images";
+
+import { isProductImagePath } from "./images";
 
 /** variant_id di product_images tidak dibatasi FK ke produk yang sama — cek di sini. */
 async function variantsBelongTo(productId: string, variantIds: (string | null | undefined)[]) {

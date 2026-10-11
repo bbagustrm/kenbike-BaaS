@@ -3,7 +3,9 @@
 import { z } from "zod";
 
 import { dbErrorMessage } from "@/lib/db-errors";
+import { pickPrimaryImage } from "@/lib/product-images";
 import { createClient } from "@/lib/supabase/server";
+import { variantLabelFromRows } from "@/lib/variant-options";
 
 import { MAX_CART_LINES, MAX_PER_ITEM } from "./items";
 import type { CartItem, CartLine, CartResult } from "./types";
@@ -35,7 +37,7 @@ async function resolveLines(supabase: Supabase, items: CartItem[]): Promise<Cart
          product:products (name, slug, is_preorder, preorder_days,
            images:product_images (storage_path, sort_order, variant_id)),
          option_values:product_variant_options (
-           value:product_option_values (value, option:product_options (sort_order)))`,
+           value:product_option_values (value, sort_order, option:product_options (sort_order)))`,
       )
       .in("id", ids),
     supabase.rpc("get_variant_availability", { variant_ids: ids }),
@@ -49,21 +51,13 @@ async function resolveLines(supabase: Supabase, items: CartItem[]): Promise<Cart
   return items.flatMap((item) => {
     const v = byId.get(item.variantId);
     if (!v?.product) return [];
-    const images = [...v.product.images].sort((a, b) => a.sort_order - b.sort_order);
-    const image =
-      images.find((img) => img.variant_id === v.id) ??
-      images.find((img) => !img.variant_id) ??
-      images[0];
+    const image = pickPrimaryImage(v.product.images, v.id);
     return [
       {
         ...item,
         productName: v.product.name,
         slug: v.product.slug,
-        variantLabel: v.option_values
-          .flatMap((ov) => (ov.value ? [ov.value] : []))
-          .sort((a, b) => (a.option?.sort_order ?? 0) - (b.option?.sort_order ?? 0))
-          .map((val) => val.value)
-          .join(" / "),
+        variantLabel: variantLabelFromRows(v.option_values),
         sku: v.sku,
         price: v.price,
         imagePath: image?.storage_path ?? null,

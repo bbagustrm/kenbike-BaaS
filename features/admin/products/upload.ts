@@ -1,15 +1,11 @@
 "use client";
 
 import type { ActionState } from "@/lib/action-state";
+import { PRODUCT_IMAGE_BUCKET } from "@/lib/product-images";
 import { createClient } from "@/lib/supabase/client";
 
 import { addProductImages } from "./image-actions";
-import {
-  ALLOWED_IMAGE_TYPES,
-  PRODUCT_IMAGE_BUCKET,
-  productImagePath,
-  validateImageFile,
-} from "./images";
+import { ALLOWED_IMAGE_TYPES, productImagePath, validateImageFile } from "./images";
 
 export const MAX_FILES_PER_UPLOAD = 10;
 

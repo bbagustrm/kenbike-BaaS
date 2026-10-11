@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 
 import { AdminPageHeader } from "@/features/admin";
-import { AddCategoryButton, CategoryTable } from "@/features/admin/categories/category-table";
+import {
+  AddCategoryButton,
+  CategoryTable,
+} from "@/features/admin/categories/components/category-table";
 import { asTree, listAdminCategories } from "@/features/admin/categories/queries";
 
 export const metadata: Metadata = { title: "Kategori · Admin" };

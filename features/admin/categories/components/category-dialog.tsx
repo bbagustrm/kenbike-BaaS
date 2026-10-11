@@ -21,8 +21,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { type ActionState, initialActionState } from "@/lib/action-state";
 import { slugify } from "@/lib/slug";
 
-import { saveCategory } from "./actions";
-import type { AdminCategory } from "./queries";
+import { saveCategory } from "../actions";
+import type { AdminCategory } from "../queries";
 
 type CategoryDialogProps = {
   category?: AdminCategory;

@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ProductImage } from "@/features/catalog";
+import { ProductImage } from "@/components/shared/product-image";
 
 import { setProductActive } from "../actions";
 import type { AdminProductRow } from "../queries";

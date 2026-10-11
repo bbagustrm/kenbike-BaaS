@@ -13,10 +13,26 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProductView, productImageUrl, productListHref } from "@/features/catalog";
-import { getProductBySlug, getVariantAvailability } from "@/features/catalog/queries";
+import { ProductView, productListHref } from "@/features/catalog";
+import {
+  getProductBySlug,
+  getVariantAvailability,
+  listProductSlugs,
+} from "@/features/catalog/queries";
 import type { ProductDetail } from "@/features/catalog";
 import { publicEnv } from "@/lib/env/public";
+import { productImageUrl } from "@/lib/product-images";
+
+/** Produk yang di-prerender saat build; produk lain dirender saat pertama diminta. */
+const PRERENDER_LIMIT = 100;
+
+export async function generateStaticParams() {
+  const slugs = await listProductSlugs();
+  // Cache Components mewajibkan minimal satu param; slug fiktif berakhir 404.
+  return slugs.length > 0
+    ? slugs.slice(0, PRERENDER_LIMIT).map(({ slug }) => ({ slug }))
+    : [{ slug: "_" }];
+}
 
 export async function generateMetadata({
   params,
@@ -45,7 +61,7 @@ export async function generateMetadata({
 export default function ProductPage({ params }: PageProps<"/products/[slug]">) {
   return (
     <Container className="py-8">
-      {/* Tanpa generateStaticParams, params adalah data request → di dalam Suspense. */}
+      {/* Slug di luar generateStaticParams baru diketahui saat request → di dalam Suspense. */}
       <Suspense fallback={<ProductSkeleton />}>
         {params.then(({ slug }) => (
           <ProductContent slug={slug} />

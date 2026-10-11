@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
-import { ProductImage } from "@/features/catalog";
+import { ProductImage } from "@/components/shared/product-image";
 
 import { deleteProductImage, reorderProductImages, updateProductImage } from "../image-actions";
 import { ALLOWED_IMAGE_TYPES } from "../images";

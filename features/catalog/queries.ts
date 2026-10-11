@@ -2,6 +2,7 @@ import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
 
+import { escapeLike } from "@/lib/search";
 import { createPublicClient } from "@/lib/supabase/public";
 
 import { PAGE_SIZE, type ProductListParams } from "./search-params";
@@ -44,11 +45,6 @@ export function categoryWithDescendants(categories: Category[], slug: string): C
     result.push(...categories.filter((c) => c.parentId === result[i]!.id));
   }
   return result;
-}
-
-/** Escape wildcard LIKE agar input pencarian diperlakukan sebagai teks biasa. */
-function escapeLike(value: string) {
-  return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
 }
 
 export type ProductListResult = {

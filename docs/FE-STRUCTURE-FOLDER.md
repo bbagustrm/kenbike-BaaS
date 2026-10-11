@@ -21,7 +21,7 @@ Aturan emas:
 1. **Server-first.** Baca data di Server Components; mutasi lewat Server Actions. `"use client"` hanya untuk interaksi.
 2. **Kode yang memakai secret wajib `server-only`** (`import "server-only"`), agar build gagal bila ter-import ke client.
 3. **`app/` tipis.** Halaman hanya memanggil query dari feature dan merender komponen feature.
-4. **Feature tidak meng-import internal feature lain** — hanya lewat `index.ts` (public API).
+4. **Feature tidak meng-import internal feature lain** — hanya lewat `index.ts` (public API). Halaman di `app/` boleh mengimpor file feature secara langsung (lihat §7).
 5. Validasi input **selalu diulang di server** (Zod) — skema yang sama boleh dipakai di form client.
 
 ---
@@ -42,8 +42,7 @@ kenbike-baas/
 │   │   ├── products/
 │   │   │   ├── page.tsx            # Daftar + filter + pencarian
 │   │   │   └── [slug]/page.tsx     # Detail produk
-│   │   ├── cart/page.tsx
-│   │   ├── checkout/page.tsx       # Wajib login
+│   │   ├── checkout/page.tsx       # Wajib login: tinjau keranjang → alamat & ongkir → bayar
 │   │   └── account/                # Wajib login
 │   │       ├── orders/page.tsx
 │   │       ├── orders/[orderNumber]/page.tsx
@@ -102,13 +101,13 @@ kenbike-baas/
 │   └── admin/                      # semua UI/aksi admin (dipisah per sub-domain)
 │       ├── products/               # form produk+varian, tabel, upload gambar
 │       ├── orders/                 # tabel order, detail, catatan internal, retry Biteship
-│       ├── categories/
+│       ├── categories/             # components/, actions, queries, schemas
 │       └── …                       # guard: requireAdmin() dari lib/auth/session.ts, dipanggil di layout DAN tiap Server Action admin
 │
 ├── components/
 │   ├── ui/                         # shadcn/ui (di-generate CLI; jangan diubah sembarangan)
 │   ├── layout/                     # Navbar, Footer, Container, PageHeader
-│   └── shared/                     # PriceTag, QuantitySelector, EmptyState, ThemeToggle, DataTable
+│   └── shared/                     # Price, ProductImage, ConfirmDialog, ThemeToggle, ScrollbarWidth
 │
 ├── lib/
 │   ├── auth/
@@ -126,6 +125,9 @@ kenbike-baas/
 │   ├── biteship/                   # server-only: rates, createOrder, searchArea, mapStatus
 │   ├── env/                        # public.ts (NEXT_PUBLIC_*) & server.ts (server-only, divalidasi per integrasi)
 │   ├── format.ts                   # formatRupiah, tanggal
+│   ├── product-images.ts           # URL Storage & pemilihan foto utama (dipakai katalog, cart, admin)
+│   ├── variant-options.ts          # label & urutan varian dari embed PostgREST
+│   ├── search.ts                   # escapeLike, firstParam (searchParams)
 │   └── utils.ts                    # cn() (shadcn)
 │
 ├── hooks/                          # hook client lintas-feature saja (mis. use-media-query)
@@ -234,7 +236,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 ## 7. Konvensi
 
 - **Penamaan file:** `kebab-case` untuk komponen/file (`product-card.tsx`), komponen React `PascalCase`.
-- **Import:** dari `index.ts` feature (`@/features/cart`), bukan ke file internal feature lain. Pengecualian: modul `server-only` (mis. `@/features/catalog/queries`) diimpor langsung dan **tidak** diekspor dari `index.ts`, agar Client Component yang mengimpor index tidak ikut menarik kode server.
+- **Import antar-feature:** lewat `index.ts` (`@/features/cart`), bukan ke file internal feature lain. `index.ts` hanya berisi API publik yang aman untuk client; modul `server-only` (mis. `@/features/catalog/queries`) diimpor langsung dan **tidak** diekspor dari `index.ts`.
+- **Import dari `app/`:** boleh langsung ke file yang dibutuhkan (mis. `@/features/admin/products/components/product-form`) agar halaman tidak menarik komponen lain lewat barrel. Sub-feature admin tidak punya `index.ts`.
+- **Logika lintas-feature** yang murni (tanpa UI/domain state) taruh di `lib/` (mis. `product-images.ts`, `variant-options.ts`), bukan diduplikasi per feature.
 - **Bahasa:** kode dan nama identifier Inggris; teks UI Indonesia (siapkan agar mudah dipindah ke i18n bila perlu).
 - **Jangan** buat folder kosong / abstraksi "just in case". Tambah folder saat ada kode pertama yang membutuhkannya.
 - **Env:** akses lewat `lib/env/public.ts` (`publicEnv`) dan `lib/env/server.ts` (`supabaseServerEnv()`, `midtransEnv()`, `biteshipEnv()`), bukan `process.env` tersebar.

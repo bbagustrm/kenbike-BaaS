@@ -3,12 +3,13 @@ import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 
-import { productImageUrl } from "../images";
+import { productImageUrl } from "@/lib/product-images";
 
 type ProductImageProps = {
   path: string | null;
   alt: string;
   sizes: string;
+  /** Gambar di atas lipatan (LCP): muat segera dengan prioritas tinggi. */
   priority?: boolean;
   className?: string;
 };
@@ -23,7 +24,8 @@ export function ProductImage({ path, alt, sizes, priority, className }: ProductI
           alt={alt}
           fill
           sizes={sizes}
-          priority={priority}
+          loading={priority ? "eager" : undefined}
+          fetchPriority={priority ? "high" : undefined}
           className="object-cover"
         />
       ) : (

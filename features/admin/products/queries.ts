@@ -1,8 +1,12 @@
 import "server-only";
 
+import { pickPrimaryImage } from "@/lib/product-images";
+import { escapeLike } from "@/lib/search";
 import { createClient } from "@/lib/supabase/server";
+import { compareOptionRank, variantLabelFromRows } from "@/lib/variant-options";
 
 import { LOW_STOCK_THRESHOLD } from "./constants";
+import { labelOf, sortOptions, toFormVariants } from "./form-mapping";
 import type { ProductFormValues } from "./schemas";
 
 export const ADMIN_PAGE_SIZE = 20;
@@ -40,10 +44,6 @@ export type AdminProductRow = {
   /** Semua varian (aktif dulu) untuk panel stok di daftar produk. */
   variants: AdminProductRowVariant[];
 };
-
-function escapeLike(value: string) {
-  return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
-}
 
 /** Daftar produk admin (termasuk nonaktif) beserta ringkasan stok. Tanpa cache. */
 export async function listAdminProducts(params: AdminProductListParams) {
@@ -87,29 +87,19 @@ export async function listAdminProducts(params: AdminProductListParams) {
     const prices = active.map((v) => v.price);
     const perVariant = active.map((v) => stock.get(v.id)?.available ?? 0);
     // Urut: aktif dulu, lalu sesuai urutan nilai opsi (Warna lalu Ukuran, dst.).
-    const withValues = p.variants.map((v) => ({
-      ...v,
-      values: v.option_values
-        .flatMap((ov) => (ov.value ? [ov.value] : []))
-        .sort((a, b) => (a.option?.sort_order ?? 0) - (b.option?.sort_order ?? 0)),
-    }));
-    const variants = withValues
+    const variants = [...p.variants]
       .sort(
         (a, b) =>
           Number(b.is_active) - Number(a.is_active) ||
-          a.values.reduce(
-            (acc, val, i) => acc || val.sort_order - (b.values[i]?.sort_order ?? 0),
-            0,
-          ) ||
+          compareOptionRank(a.option_values, b.option_values) ||
           a.created_at.localeCompare(b.created_at),
       )
       .map((v) => {
         const s = stock.get(v.id);
-        const label = v.values.map((val) => val.value).join(" / ") || "Default";
         return {
           variantId: v.id,
           sku: v.sku,
-          label,
+          label: variantLabelFromRows(v.option_values, "Default"),
           price: v.price,
           isActive: v.is_active,
           quantity: s?.quantity ?? 0,
@@ -117,20 +107,13 @@ export async function listAdminProducts(params: AdminProductListParams) {
           available: s?.available ?? 0,
         };
       });
-    const mainImage = [...p.images]
-      .sort(
-        (a, b) =>
-          Number(a.variant_id !== null) - Number(b.variant_id !== null) ||
-          a.sort_order - b.sort_order,
-      )
-      .at(0);
     return {
       id: p.id,
       name: p.name,
       slug: p.slug,
       isActive: p.is_active,
       categoryName: p.category?.name ?? null,
-      imagePath: mainImage?.storage_path ?? null,
+      imagePath: pickPrimaryImage(p.images)?.storage_path ?? null,
       variantCount: active.length,
       priceMin: prices.length ? Math.min(...prices) : null,
       priceMax: prices.length ? Math.max(...prices) : null,
@@ -191,73 +174,15 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
   if (error) throw new Error(`getAdminProduct: ${error.message}`);
   if (!data) return null;
 
-  const bySort = <T extends { sort_order: number }>(a: T, b: T) => a.sort_order - b.sort_order;
-  const options = [...data.options].sort(bySort).map((o) => ({
-    name: o.name,
-    values: [...o.values].sort(bySort),
-  }));
-  const valueToOption = new Map(
-    options.flatMap((o) =>
-      o.values.map((v) => [v.id, { option: o.name, value: v.value }] as const),
-    ),
-  );
-
-  const labelOf = (valueIds: string[]) =>
-    options
-      .map(
-        (o) => valueIds.map((id) => valueToOption.get(id)).find((x) => x?.option === o.name)?.value,
-      )
-      .filter(Boolean)
-      .join(" / ") || "Default";
-
-  // Satu baris per kombinasi: varian aktif didahulukan bila ada kombinasi ganda.
-  const seen = new Set<string>();
-  const formVariants = [...data.variants]
-    .sort(
-      (a, b) =>
-        Number(b.is_active) - Number(a.is_active) || a.created_at.localeCompare(b.created_at),
-    )
-    .flatMap((v) => {
-      const combo: Record<string, string> = {};
-      for (const { option_value_id } of v.option_values) {
-        const entry = valueToOption.get(option_value_id);
-        if (entry) combo[entry.option] = entry.value;
-      }
-      const key = options.map((o) => combo[o.name] ?? "").join("|");
-      if (Object.keys(combo).length !== options.length || seen.has(key)) return [];
-      seen.add(key);
-      return [
-        {
-          id: v.id,
-          options: combo,
-          sku: v.sku,
-          price: v.price,
-          stock: 0,
-          stockOriginal: 0,
-          isActive: v.is_active,
-        },
-      ];
-    });
-
-  // Urutkan baris sesuai urutan nilai opsi agar matriks rapi.
-  const rank = (combo: Record<string, string>) =>
-    options.map((o) => o.values.findIndex((v) => v.value === combo[o.name]));
-  formVariants.sort((a, b) => {
-    const ra = rank(a.options);
-    const rb = rank(b.options);
-    return ra.reduce((acc, x, i) => acc || x - (rb[i] ?? 0), 0);
-  });
-
   const { data: stockRows, error: stockError } = await supabase.rpc("admin_get_stock", {
     variant_ids: data.variants.map((v) => v.id),
   });
   if (stockError) throw new Error(`admin_get_stock: ${stockError.message}`);
   const stockById = new Map(stockRows.map((s) => [s.variant_id, s]));
-  for (const v of formVariants) {
-    const quantity = stockById.get(v.id)?.quantity ?? 0;
-    v.stock = quantity;
-    v.stockOriginal = quantity;
-  }
+
+  const options = sortOptions(data.options);
+  const valueIdsOf = (v: (typeof data.variants)[number]) =>
+    v.option_values.map((ov) => ov.option_value_id);
 
   // Ukuran paket disimpan per varian di DB tetapi dikelola satu untuk produk:
   // ambil dari varian aktif pertama.
@@ -280,15 +205,17 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
       widthCm: pkg?.width_cm ?? 20,
       heightCm: pkg?.height_cm ?? 10,
       options: options.map((o) => ({ name: o.name, values: o.values.map((v) => v.value) })),
-      variants: formVariants,
+      variants: toFormVariants(options, data.variants, (id) => stockById.get(id)?.quantity ?? 0),
     },
-    images: [...data.images].sort(bySort).map((img) => ({
-      id: img.id,
-      path: img.storage_path,
-      alt: img.alt_text,
-      sortOrder: img.sort_order,
-      variantId: img.variant_id,
-    })),
+    images: [...data.images]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((img) => ({
+        id: img.id,
+        path: img.storage_path,
+        alt: img.alt_text,
+        sortOrder: img.sort_order,
+        variantId: img.variant_id,
+      })),
     stock: [...data.variants]
       .sort((a, b) => Number(b.is_active) - Number(a.is_active) || a.sku.localeCompare(b.sku))
       .map((v) => {
@@ -296,7 +223,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
         return {
           variantId: v.id,
           sku: v.sku,
-          label: labelOf(v.option_values.map((ov) => ov.option_value_id)),
+          label: labelOf(options, valueIdsOf(v)),
           isActive: v.is_active,
           quantity: s?.quantity ?? 0,
           reserved: s?.reserved ?? 0,
