@@ -1,11 +1,14 @@
 "use client";
 
 import { ClockIcon, MinusIcon, PlusIcon, ShoppingCartIcon } from "lucide-react";
-import { Suspense, use, useState } from "react";
+import { Suspense, use, useState, useTransition } from "react";
+import { toast } from "sonner";
 
 import { Price } from "@/components/shared/price";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
+import { addToCart, MAX_PER_ITEM, setCartDrawerOpen } from "@/features/cart";
 import { cn } from "@/lib/utils";
 
 import type { ProductDetail } from "../types";
@@ -17,8 +20,6 @@ import {
   valueState,
 } from "../variant-selection";
 import { ProductGallery } from "./product-gallery";
-
-const MAX_PER_ITEM = 10;
 
 type ProductViewProps = {
   product: ProductDetail;
@@ -106,6 +107,7 @@ function PurchaseOptions({
 }) {
   const availability = use(availabilityPromise);
   const [quantity, setQuantity] = useState(1);
+  const [adding, startAdding] = useTransition();
   const variant = findVariant(product.options, product.variants, selection);
   const stock = variant ? (availability[variant.id] ?? 0) : 0;
   const maxQuantity = Math.min(stock, MAX_PER_ITEM);
@@ -192,15 +194,27 @@ function PurchaseOptions({
             <PlusIcon />
           </Button>
         </div>
-        {/* TODO(#51, #52): hubungkan ke keranjang (guest store / cart DB). */}
         <Button
           type="button"
           size="lg"
           className="flex-1"
-          disabled
-          title="Keranjang segera tersedia"
+          disabled={!variant || stock <= 0 || adding}
+          onClick={() =>
+            variant &&
+            startAdding(async () => {
+              const result = await addToCart(variant.id, clampedQuantity);
+              if (result.status === "error") {
+                toast.error(result.message);
+                return;
+              }
+              toast.success("Ditambahkan ke keranjang", {
+                description: product.name,
+                action: { label: "Lihat", onClick: () => setCartDrawerOpen(true) },
+              });
+            })
+          }
         >
-          <ShoppingCartIcon />
+          {adding ? <Spinner /> : <ShoppingCartIcon />}
           {stock <= 0
             ? "Stok habis"
             : product.preorderDays !== null

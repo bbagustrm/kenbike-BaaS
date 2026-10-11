@@ -71,7 +71,8 @@
 ### 3.3 Cart
 
 - **Guest:** Zustand + localStorage.
-- **Login:** tabel `carts`/`cart_items`. Saat login, cart lokal di-merge lewat RPC `merge_guest_cart`.
+- **Login:** tabel `carts`/`cart_items`. Saat login, RPC `merge_guest_cart` menerapkan aturan **"pakai salah satu"**: bila cart di akun **sudah berisi**, cart akun yang dipakai dan cart lokal dibuang; bila cart akun **kosong**, isi cart lokal dipindahkan ke DB. Setelah itu cart lokal selalu dikosongkan (setelah logout keranjang mulai dari kosong).
+- Jumlah per varian maks. 10 dan dibatasi stok tersedia; maks. 50 jenis varian per keranjang.
 - Harga **tidak pernah** dipercaya dari client; selalu diambil dari DB saat checkout.
 - **Checkout wajib login.**
 - **Cart dikosongkan saat order dibuat** (di dalam `create_order`). Jika order expired/dibatalkan, user belanja ulang (opsional nanti: tombol "beli lagi" dari detail order).

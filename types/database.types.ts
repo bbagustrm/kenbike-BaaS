@@ -1101,7 +1101,7 @@ export type Database = {
           variant_id: string
         }[]
       }
-      merge_guest_cart: { Args: { items: Json }; Returns: undefined }
+      merge_guest_cart: { Args: { items: Json }; Returns: string }
       release_reservations: { Args: { p_order_id: string }; Returns: number }
     }
     Enums: {
