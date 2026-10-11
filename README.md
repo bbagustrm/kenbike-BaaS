@@ -22,7 +22,7 @@ Next.js 16.4 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Supaba
 
 ## Setup Lokal
 
-Prasyarat: [bun](https://bun.sh) ≥ 1.3, Node ≥ 20, Docker Desktop (untuk Supabase lokal, mulai M1).
+Prasyarat: [bun](https://bun.sh) ≥ 1.3, Node ≥ 20, akun Supabase. Docker **tidak** diperlukan — development memakai project Supabase **dev** di cloud.
 
 ```bash
 bun install
@@ -32,16 +32,36 @@ bun dev
 
 Buka http://localhost:3000.
 
+### Database (Supabase)
+
+1. Buat project Supabase khusus dev (region Singapore). Saat membuat: **Data API ON**, **"Automatically expose new tables" OFF**, **automatic RLS ON**.
+2. Login & tautkan CLI (password database diketik sendiri saat diminta):
+   ```bash
+   bunx supabase login
+   bunx supabase link --project-ref <project-ref>
+   ```
+3. Terapkan skema + seed (menghapus isi DB dev): `bun run db:reset`
+4. Verifikasi: `bun run db:test` dan `bun run db:advisors`
+5. Setelah mengubah skema: tambah file di `supabase/migrations/`, lalu `bun run db:push` dan `bun run db:types`.
+
+Admin pertama: daftar seperti user biasa, lalu di SQL Editor Supabase jalankan
+`update public.profiles set role = 'admin' where id = '<uuid user>';`
+
 ## Scripts
 
-| Script                            | Fungsi                 |
-| --------------------------------- | ---------------------- |
-| `bun dev`                         | Development server     |
-| `bun run build`                   | Build produksi         |
-| `bun run lint`                    | ESLint                 |
-| `bun run typecheck`               | Pemeriksaan TypeScript |
-| `bun run test`                    | Unit test (Vitest)     |
-| `bun run format` / `format:check` | Prettier               |
+| Script                            | Fungsi                                             |
+| --------------------------------- | -------------------------------------------------- |
+| `bun dev`                         | Development server                                 |
+| `bun run build`                   | Build produksi                                     |
+| `bun run lint`                    | ESLint                                             |
+| `bun run typecheck`               | Pemeriksaan TypeScript                             |
+| `bun run test`                    | Unit test (Vitest)                                 |
+| `bun run format` / `format:check` | Prettier                                           |
+| `bun run db:push`                 | Terapkan migrasi baru ke project linked            |
+| `bun run db:reset`                | Reset DB linked: semua migrasi + seed (destruktif) |
+| `bun run db:types`                | Generate `types/database.types.ts`                 |
+| `bun run db:test`                 | Tes RLS & RPC (`supabase/tests`, di-rollback)      |
+| `bun run db:advisors`             | Security & Performance Advisor                     |
 
 ## Konvensi Kontribusi
 
