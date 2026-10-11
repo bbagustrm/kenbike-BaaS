@@ -1,7 +1,8 @@
 // ============================================
 // ERD — KenBike E-Commerce (v3, Supabase/PostgreSQL)
 // Paste ke https://dbdiagram.io untuk visualisasi
-// Migrasi: Supabase CLI (supabase/migrations/*.sql) — BUKAN Flyway
+// Migrasi: Supabase CLI (supabase/migrations/*.sql) — sumber kebenaran skema.
+// Fungsi internal (is_admin, generate_order_number, dst.) ada di schema `private`.
 // Uang: bigint, satuan rupiah utuh (tanpa desimal). Midtrans butuh integer.
 // ============================================
 
@@ -129,7 +130,8 @@ Table categories {
   id uuid [pk, default: `gen_random_uuid()`]
   name text [not null]
   slug varchar(100) [unique, not null]
-  parent_id uuid [ref: > categories.id, note: 'Self-reference, nullable. ON DELETE SET NULL / RESTRICT']
+  parent_id uuid [ref: > categories.id, note: 'Self-reference, nullable. ON DELETE RESTRICT']
+  sort_order int [default: 0]
   created_at timestamptz [default: `now()`]
 
   indexes {
@@ -225,6 +227,21 @@ Table product_images {
   indexes {
     product_id
     variant_id
+  }
+}
+
+// Audit perubahan stok fisik (stok awal & koreksi admin via admin_adjust_stock)
+Table stock_adjustments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  variant_id uuid [not null, ref: > product_variants.id, note: 'ON DELETE CASCADE']
+  delta int [not null, note: 'CHECK (delta <> 0)']
+  quantity_after int [not null, note: 'CHECK (quantity_after >= 0)']
+  reason text [not null]
+  admin_id uuid [ref: > profiles.id, note: 'ON DELETE SET NULL']
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    (variant_id, created_at)
   }
 }
 

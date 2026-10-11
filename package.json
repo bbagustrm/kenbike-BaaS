@@ -11,7 +11,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:push": "supabase db push --linked",
+    "db:reset": "supabase db reset --linked",
+    "db:types": "supabase gen types typescript --linked --schema public > types/database.types.ts",
+    "db:test": "node scripts/db-test.mjs",
+    "db:advisors": "supabase db advisors --linked --type all"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -53,6 +58,7 @@
     "jsdom": "^30.1.2",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "supabase": "^2.120.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
