@@ -9,8 +9,20 @@ import { isPurchasable, subtotal } from "../items";
 import { useCartStore } from "../store";
 import type { CartLine } from "../types";
 
-/** Subtotal + tombol lanjut. Checkout wajib login; ongkir dihitung di checkout. */
-export function CartSummary({ lines }: { lines: CartLine[] }) {
+/**
+ * Subtotal + satu tombol aksi.
+ * - drawer: tamu → "Masuk untuk checkout", user login → "Checkout" (ke /checkout).
+ * - checkout: lanjut ke pembayaran (M6).
+ */
+export function CartSummary({
+  lines,
+  place,
+  onNavigate,
+}: {
+  lines: CartLine[];
+  place: "drawer" | "checkout";
+  onNavigate?: () => void;
+}) {
   const userId = useCartStore((s) => s.userId);
   const blocked = lines.some((l) => !isPurchasable(l));
 
@@ -26,17 +38,22 @@ export function CartSummary({ lines }: { lines: CartLine[] }) {
           Ada barang yang stoknya tidak cukup. Ubah jumlah atau hapus barang tersebut.
         </p>
       )}
-      {userId ? (
-        // TODO(M5): arahkan ke /checkout.
-        <Button className="w-full" size="lg" disabled title="Checkout segera tersedia">
-          Checkout
+      {place === "checkout" ? (
+        // TODO(M6 #60): alamat, ongkir, lalu pembayaran Midtrans.
+        <Button className="w-full" size="lg" disabled title="Pembayaran segera tersedia">
+          Lanjut ke pembayaran
         </Button>
       ) : (
         <Link
-          href="/login?next=/cart"
-          className={buttonVariants({ size: "lg", className: "w-full" })}
+          href={userId ? "/checkout" : "/login?next=/checkout"}
+          onClick={onNavigate}
+          aria-disabled={blocked || undefined}
+          className={buttonVariants({
+            size: "lg",
+            className: blocked ? "pointer-events-none w-full opacity-50" : "w-full",
+          })}
         >
-          Masuk untuk checkout
+          {userId ? "Checkout" : "Masuk untuk checkout"}
         </Link>
       )}
     </div>

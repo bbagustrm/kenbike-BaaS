@@ -80,14 +80,7 @@ export function CartButton() {
 
         {lines && lines.length > 0 && (
           <SheetFooter className="border-t">
-            <CartSummary lines={lines} />
-            <Link
-              href="/cart"
-              onClick={close}
-              className={buttonVariants({ variant: "outline", className: "w-full" })}
-            >
-              Lihat keranjang
-            </Link>
+            <CartSummary lines={lines} place="drawer" onNavigate={close} />
           </SheetFooter>
         )}
       </SheetContent>

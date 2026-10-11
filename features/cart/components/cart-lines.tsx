@@ -12,7 +12,7 @@ import { MAX_PER_ITEM } from "../items";
 import { removeFromCart, setCartQuantity, useCartStore } from "../store";
 import type { CartLine } from "../types";
 
-/** Daftar barang di keranjang (drawer & halaman /cart). */
+/** Daftar barang di keranjang (drawer & halaman /checkout). */
 export function CartLines({
   lines,
   onNavigate,

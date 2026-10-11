@@ -11,8 +11,8 @@ import { useCartStore } from "../store";
 import { CartLines } from "./cart-lines";
 import { CartSummary } from "./cart-summary";
 
-/** Isi halaman /cart (data dari store keranjang di client). */
-export function CartPageView() {
+/** Isi halaman /checkout: tinjau barang + ringkasan (data dari store keranjang). */
+export function CheckoutView() {
   const lines = useCartStore((s) => s.lines);
 
   if (lines === null) {
@@ -47,10 +47,10 @@ export function CartPageView() {
       </Card>
       <Card className="lg:sticky lg:top-20">
         <CardHeader>
-          <CardTitle>Ringkasan</CardTitle>
+          <CardTitle>Ringkasan belanja</CardTitle>
         </CardHeader>
         <CardContent>
-          <CartSummary lines={lines} />
+          <CartSummary lines={lines} place="checkout" />
         </CardContent>
       </Card>
     </div>
