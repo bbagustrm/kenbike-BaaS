@@ -40,9 +40,6 @@ export function ProductTable({ rows }: { rows: AdminProductRow[] }) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-10">
-              <span className="sr-only">Varian</span>
-            </TableHead>
             <TableHead className="w-14">
               <span className="sr-only">Foto</span>
             </TableHead>
@@ -52,7 +49,7 @@ export function ProductTable({ rows }: { rows: AdminProductRow[] }) {
             <TableHead className="text-right">Varian</TableHead>
             <TableHead className="text-right">Stok tersedia</TableHead>
             <TableHead>Aktif</TableHead>
-            <TableHead className="w-12">
+            <TableHead className="w-20">
               <span className="sr-only">Aksi</span>
             </TableHead>
           </TableRow>
@@ -63,19 +60,6 @@ export function ProductTable({ rows }: { rows: AdminProductRow[] }) {
             return (
               <Fragment key={row.id}>
                 <TableRow data-state={open ? "selected" : undefined}>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-expanded={open}
-                      aria-controls={`variants-${row.id}`}
-                      aria-label={`${open ? "Tutup" : "Lihat"} varian & stok ${row.name}`}
-                      title={open ? "Tutup varian" : "Lihat varian & ubah stok"}
-                      onClick={() => toggle(row.id)}
-                    >
-                      {open ? <ChevronDownIcon /> : <ChevronRightIcon />}
-                    </Button>
-                  </TableCell>
                   <TableCell>
                     <ProductImage
                       path={row.imagePath}
@@ -118,18 +102,32 @@ export function ProductTable({ rows }: { rows: AdminProductRow[] }) {
                     <ActiveSwitch id={row.id} name={row.name} active={row.isActive} />
                   </TableCell>
                   <TableCell>
-                    <Link
-                      href={`/admin/products/${row.id}`}
-                      className={buttonVariants({ variant: "ghost", size: "icon" })}
-                      aria-label={`Ubah ${row.name}`}
-                    >
-                      <PencilIcon />
-                    </Link>
+                    <div className="flex items-center justify-end gap-1">
+                      <Link
+                        href={`/admin/products/${row.id}`}
+                        className={buttonVariants({ variant: "ghost", size: "icon" })}
+                        aria-label={`Ubah ${row.name}`}
+                        title="Ubah produk"
+                      >
+                        <PencilIcon />
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-expanded={open}
+                        aria-controls={`variants-${row.id}`}
+                        aria-label={`${open ? "Tutup" : "Lihat"} varian & stok ${row.name}`}
+                        title={open ? "Tutup varian" : "Lihat varian & ubah stok"}
+                        onClick={() => toggle(row.id)}
+                      >
+                        {open ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
                 {open && (
                   <TableRow id={`variants-${row.id}`} className="bg-muted/30 hover:bg-muted/30">
-                    <TableCell colSpan={COLUMN_COUNT} className="p-3 sm:pl-12">
+                    <TableCell colSpan={COLUMN_COUNT} className="p-3">
                       <VariantStockRows variants={row.variants} />
                     </TableCell>
                   </TableRow>

@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { ProductOption, ProductVariant } from "./types";
-import { findVariant, initialSelection, valueState } from "./variant-selection";
+import {
+  findVariant,
+  initialSelection,
+  selectionForVariant,
+  valueState,
+  variantLabel,
+} from "./variant-selection";
 
 const options: ProductOption[] = [
   {
@@ -87,5 +93,13 @@ describe("valueState", () => {
     expect(
       valueState(options, variants, { warna: "merah", ukuran: "m" }, "ukuran", "l", null),
     ).toBe("available");
+  });
+});
+
+describe("selectionForVariant / variantLabel", () => {
+  it("memetakan varian ke pilihan opsi dan label berurutan", () => {
+    const v = variant("x", ["l", "biru"]);
+    expect(selectionForVariant(options, v)).toEqual({ warna: "biru", ukuran: "l" });
+    expect(variantLabel(options, v)).toBe("Biru / L");
   });
 });

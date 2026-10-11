@@ -146,7 +146,7 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
             toast.error(`Produk dibuat, tetapi foto gagal diunggah: ${upload.message}`);
           }
         }
-        router.push(`/admin/products/${result.productId}`);
+        router.push("/admin/products");
       } else {
         form.reset(values);
       }

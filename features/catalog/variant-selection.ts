@@ -5,16 +5,28 @@ export type Selection = Record<string, string>;
 
 export type ValueState = "available" | "sold-out" | "unavailable";
 
-/** Pilihan awal: nilai-nilai opsi dari varian pertama (varian sudah urut harga). */
-export function initialSelection(options: ProductOption[], variants: ProductVariant[]): Selection {
-  const first = variants[0];
-  if (!first) return {};
+/** Pilihan opsi yang menghasilkan varian tertentu. */
+export function selectionForVariant(options: ProductOption[], variant: ProductVariant): Selection {
   const selection: Selection = {};
   for (const option of options) {
-    const value = option.values.find((v) => first.optionValueIds.includes(v.id));
+    const value = option.values.find((v) => variant.optionValueIds.includes(v.id));
     if (value) selection[option.id] = value.id;
   }
   return selection;
+}
+
+/** Pilihan awal: nilai-nilai opsi dari varian pertama (varian sudah urut harga). */
+export function initialSelection(options: ProductOption[], variants: ProductVariant[]): Selection {
+  const first = variants[0];
+  return first ? selectionForVariant(options, first) : {};
+}
+
+/** Label varian sesuai urutan opsi, mis. "Merah / M". */
+export function variantLabel(options: ProductOption[], variant: ProductVariant): string {
+  return options
+    .map((o) => o.values.find((v) => variant.optionValueIds.includes(v.id))?.value)
+    .filter(Boolean)
+    .join(" / ");
 }
 
 /** Varian yang cocok dengan pilihan lengkap; null jika belum lengkap / tidak ada. */

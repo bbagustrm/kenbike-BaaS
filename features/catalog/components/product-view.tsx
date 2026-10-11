@@ -1,7 +1,7 @@
 "use client";
 
 import { ClockIcon, MinusIcon, PlusIcon, ShoppingCartIcon } from "lucide-react";
-import { Suspense, use, useMemo, useState } from "react";
+import { Suspense, use, useState } from "react";
 
 import { Price } from "@/components/shared/price";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 import type { ProductDetail } from "../types";
-import { findVariant, initialSelection, type Selection, valueState } from "../variant-selection";
-import { ProductImage } from "./product-image";
+import {
+  findVariant,
+  initialSelection,
+  type Selection,
+  selectionForVariant,
+  valueState,
+} from "../variant-selection";
+import { ProductGallery } from "./product-gallery";
 
 const MAX_PER_ITEM = 10;
 
@@ -29,7 +35,14 @@ export function ProductView({ product, availabilityPromise }: ProductViewProps) 
 
   return (
     <div className="grid gap-8 md:grid-cols-2 lg:gap-12">
-      <ProductGallery product={product} variantId={variant?.id ?? null} />
+      <ProductGallery
+        product={product}
+        variantId={variant?.id ?? null}
+        onSelectVariant={(id) => {
+          const target = product.variants.find((v) => v.id === id);
+          if (target) setSelection(selectionForVariant(product.options, target));
+        }}
+      />
 
       <div className="space-y-6">
         <div className="space-y-2">
@@ -209,53 +222,6 @@ function PurchaseSkeleton({ options }: { options: number }) {
         </div>
       ))}
       <Skeleton className="h-10 w-full" />
-    </div>
-  );
-}
-
-function ProductGallery({
-  product,
-  variantId,
-}: {
-  product: ProductDetail;
-  variantId: string | null;
-}) {
-  // Foto khusus varian terpilih didahulukan, lalu foto umum produk.
-  const images = useMemo(() => {
-    const own = product.images.filter((img) => img.variantId && img.variantId === variantId);
-    const general = product.images.filter((img) => !img.variantId);
-    return own.length > 0 ? [...own, ...general] : general.length > 0 ? general : product.images;
-  }, [product.images, variantId]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const active = images.find((img) => img.id === activeId) ?? images[0] ?? null;
-
-  return (
-    <div className="space-y-3">
-      <ProductImage
-        path={active?.path ?? null}
-        alt={active?.alt ?? product.name}
-        sizes="(min-width: 768px) 50vw, 100vw"
-        priority
-      />
-      {images.length > 1 && (
-        <div className="grid grid-cols-5 gap-2">
-          {images.map((img) => (
-            <button
-              key={img.id}
-              type="button"
-              onClick={() => setActiveId(img.id)}
-              aria-label={`Lihat foto ${img.alt ?? product.name}`}
-              aria-pressed={img.id === active?.id}
-              className={cn(
-                "rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                img.id === active?.id && "ring-2 ring-primary",
-              )}
-            >
-              <ProductImage path={img.path} alt="" sizes="20vw" />
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
