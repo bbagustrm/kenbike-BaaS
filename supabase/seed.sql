@@ -12,9 +12,10 @@ from (values ('MTB', 'mtb', 1), ('Road Bike', 'road', 2), ('Sepeda Lipat', 'lipa
 cross join public.categories c
 where c.slug = 'sepeda';
 
--- Data contoh: ganti lewat halaman admin "Pengaturan Toko" (#45) dengan area Biteship asli.
+-- Alamat toko (asal pengiriman) contoh untuk dev — ubah lewat /admin/settings.
+-- Area Biteship asli: Kebayoran Baru, Jakarta Selatan 12110.
 insert into public.store_settings (store_name, contact_name, phone, address_line, city, province, postal_code, biteship_area_id, note)
-values ('KenBike', 'Admin KenBike', '081200000000', 'Jl. Contoh No. 1', 'Jakarta Selatan', 'DKI Jakarta', '12345', 'set-via-admin', 'Data contoh');
+values ('KenBike', 'Admin KenBike', '081200000000', 'Jl. Contoh No. 1', 'Jakarta Selatan', 'DKI Jakarta', '12110', 'IDNP6IDNC148IDND838IDZ12110', 'Data contoh');
 
 create function pg_temp.seed_product(p_category text, p_name text, p_slug text, p_description text, p jsonb)
 returns void

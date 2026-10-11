@@ -18,6 +18,8 @@ const RAISED_MESSAGES: Record<string, string> = {
   invalid_delta: "Jumlah penyesuaian tidak boleh nol.",
   variant_not_found: "Varian tidak ditemukan.",
   product_not_found: "Produk tidak ditemukan.",
+  too_many_addresses: "Maksimal 20 alamat. Hapus alamat yang tidak dipakai dulu.",
+  default_address_required: "Pilih alamat lain sebagai alamat utama terlebih dahulu.",
 };
 
 /**
