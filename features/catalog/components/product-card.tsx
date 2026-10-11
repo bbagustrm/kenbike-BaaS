@@ -4,7 +4,7 @@ import { Price } from "@/components/shared/price";
 import { Badge } from "@/components/ui/badge";
 
 import type { ProductCardData } from "../types";
-import { ProductImage } from "./product-image";
+import { ProductImage } from "@/components/shared/product-image";
 
 export function ProductCard({
   product,

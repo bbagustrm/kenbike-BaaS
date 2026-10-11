@@ -14,21 +14,18 @@ import {
   listAdminProducts,
   listCategoryOptions,
 } from "@/features/admin/products/queries";
+import { firstParam } from "@/lib/search";
 
 export const metadata: Metadata = { title: "Produk · Admin" };
 
-function first(v: string | string[] | undefined) {
-  return Array.isArray(v) ? v[0] : v;
-}
-
 export default async function AdminProductsPage({ searchParams }: PageProps<"/admin/products">) {
   const raw = await searchParams;
-  const status = first(raw.status);
+  const status = firstParam(raw.status);
   const params: AdminProductListParams = {
-    q: first(raw.q)?.trim().slice(0, 100) || undefined,
-    category: first(raw.category) || undefined,
+    q: firstParam(raw.q)?.trim().slice(0, 100) || undefined,
+    category: firstParam(raw.category) || undefined,
     status: status === "active" || status === "inactive" ? status : undefined,
-    page: Math.max(1, Math.min(500, Number.parseInt(first(raw.page) ?? "1", 10) || 1)),
+    page: Math.max(1, Math.min(500, Number.parseInt(firstParam(raw.page) ?? "1", 10) || 1)),
   };
 
   const [{ rows, total, pageCount }, categories] = await Promise.all([

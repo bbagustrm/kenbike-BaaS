@@ -2,6 +2,7 @@ import { ExternalLinkIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { z } from "zod";
 
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,11 +14,9 @@ import { getAdminProduct, listCategoryOptions } from "@/features/admin/products/
 
 export const metadata: Metadata = { title: "Ubah produk · Admin" };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export default async function EditProductPage({ params }: PageProps<"/admin/products/[id]">) {
   const { id } = await params;
-  if (!UUID.test(id)) notFound();
+  if (!z.uuid().safeParse(id).success) notFound();
 
   const [product, categories] = await Promise.all([getAdminProduct(id), listCategoryOptions()]);
   if (!product) notFound();

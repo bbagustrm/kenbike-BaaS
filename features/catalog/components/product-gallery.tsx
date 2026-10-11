@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 import type { ProductDetail } from "../types";
 import { variantLabel } from "../variant-selection";
-import { ProductImage } from "./product-image";
+import { ProductImage } from "@/components/shared/product-image";
 
 type ProductGalleryProps = {
   product: ProductDetail;

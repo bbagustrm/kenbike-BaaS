@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { Price } from "@/components/shared/price";
 import { Button } from "@/components/ui/button";
-import { ProductImage } from "@/features/catalog";
+import { ProductImage } from "@/components/shared/product-image";
 import { cn } from "@/lib/utils";
 
 import { MAX_PER_ITEM } from "../items";

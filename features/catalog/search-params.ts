@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { firstParam } from "@/lib/search";
+
 export const SORT_OPTIONS = {
   newest: "Terbaru",
   price_asc: "Harga terendah",
@@ -46,14 +48,13 @@ export type ProductListParams = {
 type RawSearchParams = Record<string, string | string[] | undefined>;
 
 export function parseProductListParams(raw: RawSearchParams): ProductListParams {
-  const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   return productListParamsSchema.parse({
-    category: first(raw.category),
-    q: first(raw.q),
-    min: first(raw.min) || undefined,
-    max: first(raw.max) || undefined,
-    sort: first(raw.sort),
-    page: first(raw.page),
+    category: firstParam(raw.category),
+    q: firstParam(raw.q),
+    min: firstParam(raw.min) || undefined,
+    max: firstParam(raw.max) || undefined,
+    sort: firstParam(raw.sort),
+    page: firstParam(raw.page),
   });
 }
 

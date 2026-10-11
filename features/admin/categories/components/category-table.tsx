@@ -14,9 +14,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { deleteCategory } from "./actions";
+import { deleteCategory } from "../actions";
 import { CategoryDialog } from "./category-dialog";
-import type { AdminCategory } from "./queries";
+import type { AdminCategory } from "../queries";
 
 export function AddCategoryButton({ parents }: { parents: Pick<AdminCategory, "id" | "name">[] }) {
   return (
