@@ -47,6 +47,27 @@ Buka http://localhost:3000.
 Admin pertama: daftar seperti user biasa, lalu di SQL Editor Supabase jalankan
 `update public.profiles set role = 'admin' where id = '<uuid user>';`
 
+### Pembayaran & pengiriman (sandbox)
+
+**Midtrans** (Dashboard Sandbox → Settings → Configuration):
+
+| Field                                  | Nilai                                    |
+| -------------------------------------- | ---------------------------------------- |
+| Payment Notification URL               | `https://<domain>/api/webhooks/midtrans` |
+| Finish / Unfinish / Error Redirect URL | `https://<domain>/checkout/finish`       |
+
+Bayar uji coba lewat [Midtrans Simulator](https://simulator.sandbox.midtrans.com) (VA, QRIS, dll.).
+
+**Biteship** (Dashboard → Integrasi → For Developers → Webhook): URL `https://<domain>/api/webhooks/biteship`, event `order.status` & `order.waybill_id`, **Headers Signature Key** `x-kenbike-webhook-secret`, **Headers Signature Secret** = isi `BITESHIP_WEBHOOK_SECRET` (nilai acak buatanmu sendiri).
+
+**Tes lokal:** webhook butuh URL publik HTTPS — jalankan tunnel lalu pakai URL-nya sebagai `<domain>`:
+
+```bash
+cloudflared tunnel --url http://localhost:3000
+```
+
+Tanpa tunnel pun status pembayaran tetap diperbarui: halaman `/checkout/finish` menanyakan Status API Midtrans setiap 15 detik (logika sama dengan webhook).
+
 ## Scripts
 
 | Script                            | Fungsi                                             |

@@ -76,3 +76,62 @@ export async function getRates(input: {
   });
   return toShippingRates(data.pricing ?? []);
 }
+
+export type CreateBiteshipOrderInput = {
+  referenceId: string;
+  shipper: { name: string; phone: string };
+  origin: { contactName: string; phone: string; address: string; areaId: string; note?: string };
+  destination: {
+    contactName: string;
+    phone: string;
+    address: string;
+    areaId: string;
+    note?: string;
+  };
+  courierCompany: string;
+  courierType: string;
+  items: RateItem[];
+};
+
+/** Buat order pengiriman (kurir dijadwalkan pickup). */
+export async function createOrder(input: CreateBiteshipOrderInput): Promise<{
+  id: string;
+  status: string;
+  waybillId: string | null;
+  trackingId: string | null;
+  trackingUrl: string | null;
+}> {
+  const data = await request<{
+    id: string;
+    status: string;
+    courier?: { waybill_id?: string | null; tracking_id?: string | null; link?: string | null };
+  }>("/v1/orders", {
+    method: "POST",
+    body: JSON.stringify({
+      reference_id: input.referenceId,
+      shipper_contact_name: input.shipper.name,
+      shipper_contact_phone: input.shipper.phone,
+      origin_contact_name: input.origin.contactName,
+      origin_contact_phone: input.origin.phone,
+      origin_address: input.origin.address,
+      origin_note: input.origin.note,
+      origin_area_id: input.origin.areaId,
+      destination_contact_name: input.destination.contactName,
+      destination_contact_phone: input.destination.phone,
+      destination_address: input.destination.address,
+      destination_note: input.destination.note,
+      destination_area_id: input.destination.areaId,
+      courier_company: input.courierCompany,
+      courier_type: input.courierType,
+      delivery_type: "now",
+      items: input.items,
+    }),
+  });
+  return {
+    id: data.id,
+    status: data.status,
+    waybillId: data.courier?.waybill_id ?? null,
+    trackingId: data.courier?.tracking_id ?? null,
+    trackingUrl: data.courier?.link ?? null,
+  };
+}

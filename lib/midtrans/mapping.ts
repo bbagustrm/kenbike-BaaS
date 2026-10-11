@@ -111,3 +111,24 @@ export function paymentAttemptExpiry(
 export function midtransTime(date: Date): string {
   return `${date.toISOString().slice(0, 19).replace("T", " ")} +0000`;
 }
+
+/** Kanal pembayaran untuk ditampilkan/dilaporkan, mis. "bca", "permata", "indomaret", "gopay". */
+export function paymentChannel(tx: {
+  payment_type?: string;
+  va_numbers?: { bank?: string }[];
+  permata_va_number?: string;
+  store?: string;
+  issuer?: string;
+  acquirer?: string;
+  bank?: string;
+}): string | null {
+  const channel =
+    tx.va_numbers?.[0]?.bank ??
+    (tx.permata_va_number ? "permata" : undefined) ??
+    tx.store ??
+    tx.issuer ??
+    tx.acquirer ??
+    tx.bank ??
+    tx.payment_type;
+  return channel ? channel.toLowerCase().slice(0, 30) : null;
+}

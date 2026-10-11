@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSnapItems, mapMidtransStatus, midtransTime, paymentAttemptExpiry } from "./mapping";
+import {
+  buildSnapItems,
+  mapMidtransStatus,
+  midtransTime,
+  paymentAttemptExpiry,
+  paymentChannel,
+} from "./mapping";
 import { midtransSignature, verifyMidtransSignature } from "./signature";
 
 const KEY = "SB-Mid-server-test";
@@ -98,5 +104,19 @@ describe("paymentAttemptExpiry", () => {
 describe("midtransTime", () => {
   it("format UTC Midtrans", () => {
     expect(midtransTime(new Date("2026-10-12T03:04:05.678Z"))).toBe("2026-10-12 03:04:05 +0000");
+  });
+});
+
+describe("paymentChannel", () => {
+  it.each([
+    [{ payment_type: "bank_transfer", va_numbers: [{ bank: "BCA" }] }, "bca"],
+    [{ payment_type: "bank_transfer", permata_va_number: "8562" }, "permata"],
+    [{ payment_type: "cstore", store: "indomaret" }, "indomaret"],
+    [{ payment_type: "qris", acquirer: "gopay" }, "gopay"],
+    [{ payment_type: "credit_card", bank: "bni" }, "bni"],
+    [{ payment_type: "gopay" }, "gopay"],
+    [{}, null],
+  ])("%o → %s", (tx, expected) => {
+    expect(paymentChannel(tx)).toBe(expected);
   });
 });

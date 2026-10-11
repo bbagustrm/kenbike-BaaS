@@ -22,4 +22,11 @@ export type MidtransTransaction = {
   transaction_id?: string;
   payment_type?: string;
   signature_key?: string;
+  settlement_time?: string;
+  va_numbers?: { bank?: string }[];
+  permata_va_number?: string;
+  store?: string;
+  issuer?: string;
+  acquirer?: string;
+  bank?: string;
 };

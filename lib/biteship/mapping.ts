@@ -64,3 +64,25 @@ const STATUS_MAP: Record<string, ShippingStatus> = {
 export function mapBiteshipStatus(status: string): ShippingStatus | null {
   return STATUS_MAP[status.trim().toLowerCase()] ?? null;
 }
+
+const RANK: Record<ShippingStatus, number> = {
+  pending: 0,
+  processing: 1,
+  shipped: 2,
+  delivered: 3,
+  returned: 3,
+  cancelled: 3,
+};
+
+/**
+ * Status pengiriman hanya boleh maju (webhook bisa datang tidak berurutan).
+ * delivered/returned/cancelled final; returned hanya setelah diproses/dikirim.
+ */
+export function canAdvanceShipping(from: ShippingStatus | null, to: ShippingStatus): boolean {
+  if (from === null) return true;
+  if (from === to) return false;
+  if (RANK[from] >= 3) return false;
+  if (to === "returned") return from === "processing" || from === "shipped";
+  if (to === "cancelled") return from === "pending" || from === "processing";
+  return RANK[to] > RANK[from];
+}

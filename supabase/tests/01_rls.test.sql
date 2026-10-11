@@ -95,7 +95,9 @@ select pg_temp.login('00000000-0000-0000-0000-0000000000ad');
 set local role authenticated;
 
 select pg_temp.check('admin: melihat semua profile', (select count(*) from public.profiles) >= 3);
-select pg_temp.eq('admin: bisa membaca semua alamat', (select count(*) from public.addresses), 2::bigint);
+-- Hanya alamat fixture: DB dev bisa berisi alamat sungguhan.
+select pg_temp.eq('admin: bisa membaca semua alamat', (select count(*) from public.addresses
+  where profile_id in ('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b')), 2::bigint);
 select pg_temp.lives('admin: bisa menulis katalog',
   $$ insert into public.categories (name, slug) values ('Uji', 'uji-kategori') $$);
 select pg_temp.throws('admin: stok fisik tetap tidak terbaca lewat tabel',

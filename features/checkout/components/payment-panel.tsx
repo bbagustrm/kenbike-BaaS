@@ -8,7 +8,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
-import { cancelMyOrder, payOrder } from "../actions";
+import { cancelMyOrder, payOrder, syncPaymentStatus } from "../actions";
 import { openSnap } from "./snap";
 
 const POLL_MS = 5_000;
@@ -28,7 +28,11 @@ export function PaymentPanel({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  usePolling(() => router.refresh());
+  // Status dari DB tiap 5 detik; tiap 15 detik juga tanya Midtrans (cadangan webhook).
+  usePolling((tick) => {
+    if (tick % 3 === 0) void syncPaymentStatus(orderNumber).then(() => router.refresh());
+    else router.refresh();
+  });
 
   const pay = (changeMethod: boolean) =>
     startTransition(async () => {
@@ -42,6 +46,7 @@ export function PaymentPanel({
       } catch {
         toast.error("Halaman pembayaran gagal dimuat. Muat ulang halaman lalu coba lagi.");
       }
+      await syncPaymentStatus(orderNumber);
       router.refresh();
     });
 
@@ -77,13 +82,14 @@ export function PaymentPanel({
 }
 
 /** Muat ulang status selama tab terlihat, maksimal 10 menit. */
-function usePolling(callback: () => void) {
+function usePolling(callback: (tick: number) => void) {
   const onTick = useEffectEvent(callback);
   useEffect(() => {
     const started = Date.now();
+    let tick = 0;
     const timer = setInterval(() => {
       if (Date.now() - started > POLL_LIMIT_MS) clearInterval(timer);
-      else if (document.visibilityState === "visible") onTick();
+      else if (document.visibilityState === "visible") onTick(++tick);
     }, POLL_MS);
     return () => clearInterval(timer);
   }, []);

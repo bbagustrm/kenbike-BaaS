@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDuration, mapBiteshipStatus, toArea, toShippingRates } from "./mapping";
+import {
+  canAdvanceShipping,
+  formatDuration,
+  mapBiteshipStatus,
+  toArea,
+  toShippingRates,
+} from "./mapping";
 import type { BiteshipPricing } from "./types";
 
 const pricing = (over: Partial<BiteshipPricing>): BiteshipPricing => ({
@@ -90,5 +96,26 @@ describe("mapBiteshipStatus", () => {
 
   it("status tidak dikenal → null", () => {
     expect(mapBiteshipStatus("teleported")).toBeNull();
+  });
+});
+
+describe("canAdvanceShipping", () => {
+  it.each([
+    [null, "processing", true],
+    ["pending", "processing", true],
+    ["processing", "shipped", true],
+    ["shipped", "delivered", true],
+    ["processing", "delivered", true],
+    ["shipped", "processing", false],
+    ["delivered", "shipped", false],
+    ["delivered", "returned", false],
+    ["shipped", "returned", true],
+    ["pending", "returned", false],
+    ["processing", "cancelled", true],
+    ["shipped", "cancelled", false],
+    ["cancelled", "processing", false],
+    ["shipped", "shipped", false],
+  ] as const)("%s → %s = %s", (from, to, expected) => {
+    expect(canAdvanceShipping(from, to)).toBe(expected);
   });
 });

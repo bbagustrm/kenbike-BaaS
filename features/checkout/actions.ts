@@ -1,10 +1,14 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 
+import { applyMidtransTransaction } from "@/features/fulfillment/midtrans";
+import { createShipmentForOrder } from "@/features/fulfillment/shipment";
 import { getCurrentUser } from "@/lib/auth/session";
 import { dbErrorMessage } from "@/lib/db-errors";
+import { getTransactionStatus } from "@/lib/midtrans/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -195,4 +199,44 @@ export async function cancelMyOrder(
 
   refresh();
   return { status: "success", message: "Pesanan dibatalkan. Stok dikembalikan." };
+}
+
+/**
+ * Tanyakan status attempt terakhir ke Midtrans (Status API) lalu terapkan
+ * dengan logika yang sama seperti webhook. Cadangan bila webhook terlambat
+ * dan agar development lokal tanpa tunnel tetap bisa melihat status "Lunas".
+ */
+export async function syncPaymentStatus(orderNumber: string): Promise<{ changed: boolean }> {
+  const user = await getCurrentUser();
+  if (!user) return { changed: false };
+  const orderId = await myOrderId(orderNumber);
+  if (!orderId) return { changed: false };
+
+  const { data: attempt } = await createAdminClient()
+    .from("payments")
+    .select("gateway_order_id")
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!attempt) return { changed: false };
+
+  try {
+    const tx = await getTransactionStatus(attempt.gateway_order_id);
+    if (!tx) return { changed: false };
+    const result = await applyMidtransTransaction(tx);
+    if (result.outcome === "paid" && result.needsShipment) {
+      after(() =>
+        createShipmentForOrder(result.orderId).catch((error) =>
+          console.error("[syncPaymentStatus] shipment", error),
+        ),
+      );
+    }
+    const changed = result.outcome === "paid" || result.outcome === "updated";
+    if (changed) refresh();
+    return { changed };
+  } catch (error) {
+    console.error("[syncPaymentStatus]", orderNumber, error);
+    return { changed: false };
+  }
 }
