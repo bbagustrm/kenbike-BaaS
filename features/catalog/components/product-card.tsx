@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Price } from "@/components/shared/price";
+import { Badge } from "@/components/ui/badge";
 
 import type { ProductCardData } from "../types";
 import { ProductImage } from "./product-image";
@@ -17,13 +18,20 @@ export function ProductCard({
       href={`/products/${product.slug}`}
       className="group flex flex-col gap-3 rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
-      <ProductImage
-        path={product.imagePath}
-        alt={product.name}
-        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-        priority={priority}
-        className="transition-opacity group-hover:opacity-90"
-      />
+      <div className="relative">
+        <ProductImage
+          path={product.imagePath}
+          alt={product.name}
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+          priority={priority}
+          className="transition-opacity group-hover:opacity-90"
+        />
+        {product.preorderDays !== null && (
+          <Badge className="absolute top-2 left-2 bg-amber-500 text-white dark:bg-amber-500">
+            Pre-order
+          </Badge>
+        )}
+      </div>
       <div className="space-y-1">
         {product.categoryName && (
           <p className="text-xs text-muted-foreground">{product.categoryName}</p>

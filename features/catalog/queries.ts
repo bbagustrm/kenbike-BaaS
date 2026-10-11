@@ -96,7 +96,10 @@ export async function listProducts(params: ProductListParams): Promise<ProductLi
   let query = applyListingFilters(
     supabase
       .from("product_listings")
-      .select("id, slug, name, category_id, price_min, price_max, image_path", { count: "exact" }),
+      .select(
+        "id, slug, name, category_id, price_min, price_max, image_path, is_preorder, preorder_days",
+        { count: "exact" },
+      ),
     filters,
   );
   query =
@@ -138,6 +141,7 @@ export async function listProducts(params: ProductListParams): Promise<ProductLi
       priceMin: row.price_min ?? 0,
       priceMax: row.price_max ?? 0,
       imagePath: row.image_path,
+      preorderDays: row.is_preorder ? row.preorder_days : null,
     })),
     total,
     page: params.page,
@@ -153,7 +157,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
   const { data, error } = await createPublicClient()
     .from("products")
     .select(
-      `id, slug, name, description, category_id,
+      `id, slug, name, description, category_id, is_preorder, preorder_days,
        options:product_options (id, name, sort_order,
          values:product_option_values (id, value, sort_order)),
        variants:product_variants (id, sku, price, weight_gram, length_cm, width_cm, height_cm,
@@ -194,6 +198,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     slug: data.slug,
     name: data.name,
     description: data.description,
+    preorderDays: data.is_preorder ? data.preorder_days : null,
     breadcrumb,
     options,
     // RLS hanya mengembalikan varian aktif untuk anon. Urut: harga, lalu urutan opsi.

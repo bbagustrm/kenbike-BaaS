@@ -230,6 +230,7 @@ export type Database = {
           id: string
           image_url_snapshot: string | null
           order_id: string
+          preorder_days_snapshot: number | null
           price_at_purchase: number
           product_name_snapshot: string
           quantity: number
@@ -242,6 +243,7 @@ export type Database = {
           id?: string
           image_url_snapshot?: string | null
           order_id: string
+          preorder_days_snapshot?: number | null
           price_at_purchase: number
           product_name_snapshot: string
           quantity: number
@@ -254,6 +256,7 @@ export type Database = {
           id?: string
           image_url_snapshot?: string | null
           order_id?: string
+          preorder_days_snapshot?: number | null
           price_at_purchase?: number
           product_name_snapshot?: string
           quantity?: number
@@ -670,7 +673,9 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          is_preorder: boolean
           name: string
+          preorder_days: number | null
           slug: string
           updated_at: string
         }
@@ -680,7 +685,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_preorder?: boolean
           name: string
+          preorder_days?: number | null
           slug: string
           updated_at?: string
         }
@@ -690,7 +697,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_preorder?: boolean
           name?: string
+          preorder_days?: number | null
           slug?: string
           updated_at?: string
         }
@@ -942,7 +951,9 @@ export type Database = {
           created_at: string | null
           id: string | null
           image_path: string | null
+          is_preorder: boolean | null
           name: string | null
+          preorder_days: number | null
           price_max: number | null
           price_min: number | null
           slug: string | null

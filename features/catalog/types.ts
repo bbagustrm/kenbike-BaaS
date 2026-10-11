@@ -14,6 +14,8 @@ export type ProductCardData = {
   priceMin: number;
   priceMax: number;
   imagePath: string | null;
+  /** Estimasi hari kirim bila produk pre-order, selain itu null. */
+  preorderDays: number | null;
 };
 
 export type ProductOption = {
@@ -43,6 +45,8 @@ export type ProductDetail = {
   slug: string;
   name: string;
   description: string | null;
+  /** Estimasi hari kirim bila produk pre-order, selain itu null. */
+  preorderDays: number | null;
   breadcrumb: Category[];
   options: ProductOption[];
   variants: ProductVariant[];

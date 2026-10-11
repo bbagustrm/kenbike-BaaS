@@ -146,6 +146,8 @@ Table products {
   slug varchar(150) [unique, not null]
   description text
   is_active boolean [not null, default: true, note: 'Soft delete. JANGAN hard delete produk yang pernah dipesan']
+  is_preorder boolean [not null, default: false, note: 'Pre-order: stok & pembayaran sama, hanya pengiriman lebih lama']
+  preorder_days int [note: 'Estimasi siap kirim (1–365 hari); wajib bila is_preorder']
   created_at timestamptz [default: `now()`]
   updated_at timestamptz [default: `now()`]
 
@@ -338,6 +340,7 @@ Table order_items {
   product_name_snapshot text [not null]
   variant_label_snapshot text [note: 'Mis. "Merah - M"']
   image_url_snapshot text
+  preorder_days_snapshot int [note: 'Estimasi pre-order saat checkout; null untuk produk biasa']
   created_at timestamptz [default: `now()`]
 
   indexes {
