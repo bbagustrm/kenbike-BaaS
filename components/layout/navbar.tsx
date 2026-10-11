@@ -1,4 +1,5 @@
 import { SearchIcon, ShoppingCartIcon } from "lucide-react";
+import Form from "next/form";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -33,8 +34,8 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Form GET biasa: tetap berfungsi tanpa JavaScript. */}
-        <form
+        {/* Form GET (next/form): navigasi client-side, tetap berfungsi tanpa JavaScript. */}
+        <Form
           action="/products"
           role="search"
           className="relative ml-auto hidden max-w-xs flex-1 sm:block"
@@ -47,7 +48,7 @@ export function Navbar() {
             aria-label="Cari produk"
             className="pl-8"
           />
-        </form>
+        </Form>
 
         <div className="ml-auto flex items-center gap-1 sm:ml-0">
           <ThemeToggle />
