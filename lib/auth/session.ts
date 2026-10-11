@@ -1,5 +1,6 @@
 import "server-only";
 
+import { io } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
@@ -21,6 +22,10 @@ export type CurrentUser = {
  * pemanggilnya harus berada di dalam <Suspense>.
  */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  // getClaims() membaca waktu sekarang (cek kedaluwarsa token). Dengan Cache
+  // Components + partial prefetching, cookies() tersedia saat runtime prefetch,
+  // jadi tandai eksplisit bahwa sisa fungsi ini hanya berjalan saat request.
+  await io();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data?.claims) return null;
