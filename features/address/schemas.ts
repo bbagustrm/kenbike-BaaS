@@ -2,13 +2,7 @@ import { z } from "zod";
 
 import { areaSchema } from "@/lib/biteship/schemas";
 import { requiredPhoneSchema } from "@/lib/phone";
-
-const optionalText = (max: number, label: string) =>
-  z
-    .string()
-    .trim()
-    .max(max, { error: `${label} maksimal ${max} karakter` })
-    .transform((v) => v || null);
+import { optionalText } from "@/lib/validation";
 
 export const addressFormSchema = z.object({
   label: optionalText(50, "Label"),

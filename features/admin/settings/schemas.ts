@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { areaSchema } from "@/lib/biteship/schemas";
 import { requiredPhoneSchema } from "@/lib/phone";
+import { optionalText } from "@/lib/validation";
 
 /** Alamat toko = asal pengiriman (origin) untuk cek ongkir & order Biteship. */
 export const storeSettingsSchema = z.object({
@@ -24,11 +25,7 @@ export const storeSettingsSchema = z.object({
   area: areaSchema.nullable().refine((v) => v !== null, {
     error: "Pilih kecamatan / kota dari daftar",
   }),
-  note: z
-    .string()
-    .trim()
-    .max(200, { error: "Maksimal 200 karakter" })
-    .transform((v) => v || null),
+  note: optionalText(200, "Catatan"),
 });
 
 export type StoreSettingsInput = z.input<typeof storeSettingsSchema>;
