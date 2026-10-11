@@ -4,37 +4,40 @@ import { Suspense } from "react";
 
 import { Container } from "@/components/layout/container";
 import { Skeleton } from "@/components/ui/skeleton";
-import { hasShippableAddress } from "@/features/address/queries";
-import { CheckoutView } from "@/features/cart";
+import { listMyAddresses } from "@/features/address/queries";
+import { CheckoutForm, SnapScript } from "@/features/checkout";
 import { requireUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
 
-/** Syarat checkout: login + punya alamat kirim. Pilih alamat, ongkir & pembayaran di M6. */
+/** Syarat checkout: login + punya alamat kirim (alamat dengan area Biteship). */
 export default function CheckoutPage() {
   return (
     <Container className="space-y-6 py-10">
       <h1 className="text-2xl font-bold tracking-tight">Checkout</h1>
       <Suspense fallback={<CheckoutSkeleton />}>
-        <CheckoutGate>
-          <CheckoutView />
-        </CheckoutGate>
+        <Checkout />
       </Suspense>
+      <SnapScript />
     </Container>
   );
 }
 
-async function CheckoutGate({ children }: { children: React.ReactNode }) {
+async function Checkout() {
   await requireUser("/checkout");
-  if (!(await hasShippableAddress())) redirect("/account/addresses?next=/checkout");
-  return children;
+  const addresses = await listMyAddresses();
+  if (!addresses.some((a) => a.area)) redirect("/account/addresses?next=/checkout");
+  return <CheckoutForm addresses={addresses} />;
 }
 
 function CheckoutSkeleton() {
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_20rem]" aria-busy="true">
-      <Skeleton className="h-64" />
-      <Skeleton className="h-40" />
+    <div className="grid gap-6 lg:grid-cols-[1fr_22rem]" aria-busy="true">
+      <div className="space-y-6">
+        <Skeleton className="h-40" />
+        <Skeleton className="h-40" />
+      </div>
+      <Skeleton className="h-72" />
     </div>
   );
 }
