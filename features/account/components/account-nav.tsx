@@ -1,23 +1,40 @@
 "use client";
 
-import { MapPinIcon, UserIcon } from "lucide-react";
+import { MapPinIcon, PackageIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 
 import { cn } from "@/lib/utils";
 
-// Menu bertambah seiring fitur: Pesanan (M8).
 const ITEMS = [
+  { href: "/account/orders", label: "Pesanan", icon: PackageIcon },
   { href: "/account", label: "Profil", icon: UserIcon },
   { href: "/account/addresses", label: "Alamat", icon: MapPinIcon },
 ] as const;
 
 export function AccountNav() {
-  const pathname = usePathname();
+  // usePathname() = data request pada route dinamis → di dalam Suspense;
+  // fallback-nya menu yang sama tanpa sorotan aktif (masuk static shell).
+  return (
+    <Suspense fallback={<NavLinks pathname={null} />}>
+      <ActiveNavLinks />
+    </Suspense>
+  );
+}
+
+function ActiveNavLinks() {
+  return <NavLinks pathname={usePathname()} />;
+}
+
+function NavLinks({ pathname }: { pathname: string | null }) {
   return (
     <nav aria-label="Menu akun" className="flex gap-1 overflow-x-auto border-b">
       {ITEMS.map((item) => {
-        const active = pathname === item.href;
+        // /account/orders/<nomor> tetap menyorot tab Pesanan.
+        const active =
+          pathname !== null &&
+          (item.href === "/account" ? pathname === item.href : pathname.startsWith(item.href));
         return (
           <Link
             key={item.href}

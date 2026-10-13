@@ -11,6 +11,7 @@ export type BiteshipEvent = {
   status?: string;
   courier_waybill_id?: string | null;
   courier_tracking_id?: string | null;
+  courier_link?: string | null;
   updated_at?: string;
 };
 
@@ -59,11 +60,14 @@ export async function applyBiteshipEvent(event: BiteshipEvent): Promise<Biteship
   if (historyError) throw new Error(`order_status_history: ${historyError.message}`);
   if (!inserted || inserted.length === 0) return "duplicate";
 
+  const tracking: { waybill_id?: string; tracking_id?: string; tracking_url?: string } = {};
   if (event.courier_waybill_id && event.courier_waybill_id !== shipment.waybill_id) {
-    await admin
-      .from("shipments")
-      .update({ waybill_id: event.courier_waybill_id.slice(0, 100) })
-      .eq("id", shipment.id);
+    tracking.waybill_id = event.courier_waybill_id.slice(0, 100);
+  }
+  if (event.courier_tracking_id) tracking.tracking_id = event.courier_tracking_id.slice(0, 100);
+  if (event.courier_link?.startsWith("https://")) tracking.tracking_url = event.courier_link;
+  if (Object.keys(tracking).length > 0) {
+    await admin.from("shipments").update(tracking).eq("id", shipment.id);
   }
 
   const current = shipment.order?.shipping_status ?? null;

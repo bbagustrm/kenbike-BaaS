@@ -198,3 +198,45 @@ export async function changeUserCart(input: unknown, mode: "add" | "set"): Promi
 
   return { ...(await userLines(supabase)), message };
 }
+
+/**
+ * "Beli lagi": masukkan barang dari order lama ke keranjang. Harga mengikuti
+ * harga sekarang; varian yang tidak dijual lagi / habis dilewati.
+ */
+export async function addOrderItemsToCart(orderNumber: string): Promise<CartResult> {
+  const { supabase, userId } = await session();
+  if (!userId) return NOT_LOGGED_IN;
+  if (!/^[A-Z0-9-]{1,30}$/.test(orderNumber)) {
+    return { status: "error", message: "Pesanan tidak ditemukan." };
+  }
+
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("items:order_items (variant_id, quantity)")
+    .eq("order_number", orderNumber)
+    .maybeSingle();
+  if (error) return { status: "error", message: dbErrorMessage(error) };
+  if (!order) return { status: "error", message: "Pesanan tidak ditemukan." };
+
+  let added = 0;
+  for (const item of order.items) {
+    const result = await changeUserCart(
+      { variantId: item.variant_id, quantity: Math.min(item.quantity, MAX_PER_ITEM) },
+      "add",
+    );
+    if (result.status === "success") added++;
+  }
+  const skipped = order.items.length - added;
+
+  const lines = await userLines(supabase);
+  if (added === 0) {
+    return { ...lines, status: "error", message: "Barang dari pesanan ini sedang tidak tersedia." };
+  }
+  return {
+    ...lines,
+    message:
+      skipped > 0
+        ? `${added} barang ditambahkan, ${skipped} tidak tersedia.`
+        : "Barang ditambahkan ke keranjang.",
+  };
+}

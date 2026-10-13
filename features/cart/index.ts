@@ -3,5 +3,5 @@ export { CartButton } from "./components/cart-button";
 export { CartLines } from "./components/cart-lines";
 export { CartSync } from "./components/cart-sync";
 export { isPurchasable, MAX_PER_ITEM, subtotal } from "./items";
-export { addToCart, markCartOrdered, setCartDrawerOpen, useCartStore } from "./store";
+export { addToCart, buyAgain, markCartOrdered, setCartDrawerOpen, useCartStore } from "./store";
 export type * from "./types";

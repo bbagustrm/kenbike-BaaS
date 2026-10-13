@@ -755,6 +755,8 @@ export type Database = {
           id: string
           order_id: string
           origin_address_snapshot: Json
+          tracking_id: string | null
+          tracking_url: string | null
           updated_at: string
           waybill_id: string | null
         }
@@ -769,6 +771,8 @@ export type Database = {
           id?: string
           order_id: string
           origin_address_snapshot: Json
+          tracking_id?: string | null
+          tracking_url?: string | null
           updated_at?: string
           waybill_id?: string | null
         }
@@ -783,6 +787,8 @@ export type Database = {
           id?: string
           order_id?: string
           origin_address_snapshot?: Json
+          tracking_id?: string | null
+          tracking_url?: string | null
           updated_at?: string
           waybill_id?: string | null
         }
