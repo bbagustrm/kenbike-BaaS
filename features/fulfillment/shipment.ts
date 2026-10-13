@@ -147,7 +147,12 @@ export async function createShipmentForOrder(orderId: string): Promise<ShipmentR
 
   const { error: updateError } = await admin
     .from("shipments")
-    .update({ biteship_order_id: shipment.id, waybill_id: shipment.waybillId })
+    .update({
+      biteship_order_id: shipment.id,
+      waybill_id: shipment.waybillId,
+      tracking_id: shipment.trackingId,
+      tracking_url: shipment.trackingUrl?.startsWith("https://") ? shipment.trackingUrl : null,
+    })
     .eq("order_id", order.id);
   if (updateError) throw new Error(`shipments(update): ${updateError.message}`);
 

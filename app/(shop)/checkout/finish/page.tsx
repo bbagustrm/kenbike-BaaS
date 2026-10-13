@@ -161,9 +161,14 @@ async function Finish({ orderNumber }: { orderNumber: string }) {
         </CardContent>
       </Card>
 
-      <Link href="/products" className={buttonVariants({ variant: "outline" })}>
-        Lanjut belanja
-      </Link>
+      <div className="flex flex-wrap gap-2">
+        <Link href={`/account/orders/${order.orderNumber}`} className={buttonVariants()}>
+          Lihat detail pesanan
+        </Link>
+        <Link href="/products" className={buttonVariants({ variant: "outline" })}>
+          Lanjut belanja
+        </Link>
+      </div>
     </div>
   );
 }

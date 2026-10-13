@@ -4,7 +4,13 @@ import { toast } from "sonner";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { changeUserCart, getGuestCartLines, getUserCart, syncGuestCart } from "./actions";
+import {
+  addOrderItemsToCart,
+  changeUserCart,
+  getGuestCartLines,
+  getUserCart,
+  syncGuestCart,
+} from "./actions";
 import { addItem, MAX_PER_ITEM, setItemQuantity } from "./items";
 import type { CartItem, CartLine, CartResult } from "./types";
 
@@ -159,6 +165,17 @@ export async function setCartQuantity(variantId: string, quantity: number): Prom
 export const removeFromCart = (variantId: string) => setCartQuantity(variantId, 0);
 
 export const setCartDrawerOpen = (open: boolean) => set({ drawerOpen: open });
+
+/** "Beli lagi" dari riwayat pesanan (hanya user login) → buka drawer keranjang. */
+export async function buyAgain(orderNumber: string): Promise<CartResult> {
+  const result = await run(() => addOrderItemsToCart(orderNumber));
+  if (result.status === "error") toast.error(result.message);
+  else {
+    toast.success(result.message);
+    set({ drawerOpen: true });
+  }
+  return result;
+}
 
 /** create_order mengosongkan cart DB; samakan tampilan tanpa menunggu sinkronisasi. */
 export const markCartOrdered = () => set({ lines: [] });
