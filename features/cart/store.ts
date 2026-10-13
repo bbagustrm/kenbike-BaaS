@@ -159,3 +159,6 @@ export async function setCartQuantity(variantId: string, quantity: number): Prom
 export const removeFromCart = (variantId: string) => setCartQuantity(variantId, 0);
 
 export const setCartDrawerOpen = (open: boolean) => set({ drawerOpen: open });
+
+/** create_order mengosongkan cart DB; samakan tampilan tanpa menunggu sinkronisasi. */
+export const markCartOrdered = () => set({ lines: [] });

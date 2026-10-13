@@ -20,6 +20,12 @@ const RAISED_MESSAGES: Record<string, string> = {
   product_not_found: "Produk tidak ditemukan.",
   too_many_addresses: "Maksimal 20 alamat. Hapus alamat yang tidak dipakai dulu.",
   default_address_required: "Pilih alamat lain sebagai alamat utama terlebih dahulu.",
+  cart_empty: "Keranjang masih kosong.",
+  address_not_found: "Alamat tidak ditemukan.",
+  insufficient_stock: "Stok salah satu barang tidak cukup. Ubah jumlah di keranjang.",
+  invalid_courier: "Pilih layanan kurir terlebih dahulu.",
+  invalid_shipping_cost: "Ongkir tidak valid. Pilih kurir lagi.",
+  order_not_cancellable: "Pesanan ini sudah tidak bisa dibatalkan.",
 };
 
 /**

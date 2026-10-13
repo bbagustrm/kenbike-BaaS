@@ -80,7 +80,7 @@ export function CartButton() {
 
         {lines && lines.length > 0 && (
           <SheetFooter className="border-t">
-            <CartSummary lines={lines} place="drawer" onNavigate={close} />
+            <CartSummary lines={lines} onNavigate={close} />
           </SheetFooter>
         )}
       </SheetContent>

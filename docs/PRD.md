@@ -128,7 +128,8 @@ Transisi di luar tabel ini ditolak (ditegakkan di RPC/handler). Nilai mentah pro
 ### 3.7 Webhook — aturan wajib
 
 - Verifikasi signature Midtrans: `SHA512(order_id + status_code + gross_amount + ServerKey)` (modul `crypto` Node).
-- Biteship: verifikasi lewat secret yang kita pasang di URL/header webhook (cek dokumentasi Biteship saat implementasi); jangan percaya payload mentah.
+- Biteship: header kustom `x-kenbike-webhook-secret` = `BITESHIP_WEBHOOK_SECRET` (diatur di dashboard sebagai "Headers Signature Key/Secret"; nilai acak buatan sendiri), dibandingkan timing-safe. Permintaan uji dari dashboard (tanpa `order_id`) dibalas 200 tanpa efek. Status pengiriman hanya boleh maju (event mundur diabaikan).
+- Cadangan webhook: halaman `/checkout/finish` memanggil Status API Midtrans berkala dan menerapkan hasilnya dengan fungsi yang sama (`applyMidtransTransaction`) — idempoten lewat `order_status_history`.
 - Idempoten, cepat (< beberapa detik, ingat batas durasi function Vercel), selalu balas 2xx untuk event yang sudah diproses.
 - Pakai `service_role` (bypass RLS) hanya di handler ini.
 
