@@ -9,6 +9,7 @@ export const RATE_LIMITS = {
   checkout: { limit: 5, windowSeconds: 60 },
   payOrder: { limit: 10, windowSeconds: 60 },
   syncPayment: { limit: 12, windowSeconds: 60 },
+  documents: { limit: 20, windowSeconds: 60 },
 } as const;
 
 export type RateLimitedAction = keyof typeof RATE_LIMITS;
