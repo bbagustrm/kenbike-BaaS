@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { ActionState } from "@/lib/action-state";
 import { BiteshipError, searchAreas as biteshipSearchAreas } from "@/lib/biteship/client";
 import { dbErrorMessage } from "@/lib/db-errors";
+import { RATE_LIMITED_MESSAGE, rateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 import { addressFormSchema } from "./schemas";
@@ -30,6 +31,7 @@ export async function searchAreas(query: string): Promise<{ areas: Area[]; error
   if (!userId) return { areas: [], error: NOT_LOGGED_IN.message };
   const parsed = searchSchema.safeParse(query);
   if (!parsed.success) return { areas: [] };
+  if (!(await rateLimit("searchAreas", userId))) return { areas: [], error: RATE_LIMITED_MESSAGE };
   try {
     return { areas: (await biteshipSearchAreas(parsed.data)).slice(0, 20) };
   } catch (error) {

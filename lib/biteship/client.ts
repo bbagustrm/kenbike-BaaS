@@ -1,6 +1,7 @@
 import "server-only";
 
 import { biteshipEnv } from "@/lib/env/server";
+import { log } from "@/lib/log";
 
 import { toArea, toShippingRates } from "./mapping";
 import type { Area, BiteshipArea, BiteshipPricing, RateItem, ShippingRate } from "./types";
@@ -45,7 +46,12 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     ({ success?: boolean; error?: string; code?: number } & T) | null;
   if (!res.ok || !body || body.success === false) {
     // Detail dari Biteship dicatat di server, pesan ke pengguna tetap umum.
-    console.error("[biteship]", path, res.status, body?.code, body?.error);
+    log("error", "biteship.request_failed", {
+      path: path.split("?")[0],
+      status: res.status,
+      code: body?.code,
+      error: body?.error,
+    });
     throw new BiteshipError("Layanan pengiriman sedang bermasalah. Coba lagi.", body?.code);
   }
   return body;

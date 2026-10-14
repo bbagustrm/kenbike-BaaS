@@ -2,6 +2,7 @@ import "server-only";
 
 import { BiteshipError, createOrder } from "@/lib/biteship/client";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { log } from "@/lib/log";
 import type { Json } from "@/types/database.types";
 
 import { flagAttention } from "./midtrans";
@@ -139,7 +140,10 @@ export async function createShipmentForOrder(orderId: string): Promise<ShipmentR
       })),
     });
   } catch (createError) {
-    console.error("[createShipmentForOrder]", order.order_number, createError);
+    log("error", "shipment.create_failed", {
+      orderNumber: order.order_number,
+      message: createError instanceof Error ? createError.message : String(createError),
+    });
     return fail(
       createError instanceof BiteshipError ? createError.message : "Gagal membuat pengiriman.",
     );

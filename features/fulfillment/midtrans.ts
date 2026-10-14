@@ -1,8 +1,10 @@
 import "server-only";
 
 import { mapMidtransStatus, paymentChannel } from "@/lib/midtrans/mapping";
+import { log } from "@/lib/log";
 import type { MidtransTransaction } from "@/lib/midtrans/types";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { opsAlert } from "@/lib/ops-alert";
 import type { Database, Json } from "@/types/database.types";
 
 type AttemptStatus = Database["public"]["Enums"]["payment_attempt_status"];
@@ -67,7 +69,11 @@ export async function applyMidtransTransaction(tx: MidtransTransaction): Promise
   // Nominal harus sama persis dengan attempt yang kita buat.
   if (Math.round(Number(tx.gross_amount)) !== payment.amount) {
     await flagAttention(payment.order_id, "amount_mismatch");
-    console.error("[midtrans] amount mismatch", tx.order_id, tx.gross_amount, payment.amount);
+    log("error", "payment.amount_mismatch", {
+      gatewayOrderId: tx.order_id,
+      received: tx.gross_amount,
+      expected: payment.amount,
+    });
     return { outcome: "amount_mismatch", orderId: payment.order_id };
   }
 
@@ -136,9 +142,13 @@ export async function flagAttention(
   orderId: string,
   reason: Database["public"]["Enums"]["attention_reason"],
 ) {
-  await createAdminClient()
+  const { data } = await createAdminClient()
     .from("orders")
     .update({ attention_reason: reason })
     .eq("id", orderId)
-    .is("attention_reason", null);
+    .is("attention_reason", null)
+    .select("order_number")
+    .maybeSingle();
+  // Hanya saat tanda baru dipasang (bukan bila sudah ada alasan lain).
+  if (data) await opsAlert("Pesanan perlu tindakan", { order: data.order_number, reason });
 }

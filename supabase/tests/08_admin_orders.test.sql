@@ -53,3 +53,15 @@ select pg_temp.check('dashboard: tanggal harian berformat YYYY-MM-DD',
 select pg_temp.check('dashboard: order lunas menunggu dikirim terhitung',
   (public.admin_dashboard_stats() ->> 'to_ship')::int >= 1);
 reset role;
+
+-- #76 — admin_cron_health
+select pg_temp.login('00000000-0000-0000-0000-0000000000f1');
+set local role authenticated;
+select pg_temp.throws('customer tidak bisa membaca kesehatan cron',
+  'select * from public.admin_cron_health()', '42501');
+reset role;
+select pg_temp.login('00000000-0000-0000-0000-0000000000fa');
+set local role authenticated;
+select pg_temp.check('admin melihat job expire-pending-orders',
+  exists (select 1 from public.admin_cron_health() where job_name = 'expire-pending-orders'));
+reset role;

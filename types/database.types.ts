@@ -902,6 +902,7 @@ export type Database = {
           city: string
           contact_name: string
           created_at: string
+          email: string | null
           id: string
           is_active: boolean
           latitude: number | null
@@ -919,6 +920,7 @@ export type Database = {
           city: string
           contact_name: string
           created_at?: string
+          email?: string | null
           id?: string
           is_active?: boolean
           latitude?: number | null
@@ -936,6 +938,7 @@ export type Database = {
           city?: string
           contact_name?: string
           created_at?: string
+          email?: string | null
           id?: string
           is_active?: boolean
           latitude?: number | null
@@ -981,6 +984,18 @@ export type Database = {
         Returns: number
       }
       admin_create_product: { Args: { payload: Json }; Returns: string }
+      admin_cron_health: {
+        Args: never
+        Returns: {
+          active: boolean
+          failures_24h: number
+          job_name: string
+          last_message: string
+          last_run_at: string
+          last_status: string
+          schedule: string
+        }[]
+      }
       admin_dashboard_stats: {
         Args: { p_days?: number; p_low_stock?: number }
         Returns: Json
@@ -1053,6 +1068,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      check_rate_limit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number }
+        Returns: boolean
       }
       confirm_payment: {
         Args: { p_order_id: string }
@@ -1131,6 +1150,18 @@ export type Database = {
         }[]
       }
       merge_guest_cart: { Args: { items: Json }; Returns: string }
+      public_store_info: {
+        Args: never
+        Returns: {
+          address_line: string
+          city: string
+          email: string
+          phone: string
+          postal_code: string
+          province: string
+          store_name: string
+        }[]
+      }
       release_reservations: { Args: { p_order_id: string }; Returns: number }
     }
     Enums: {

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { midtransEnv } from "@/lib/env/server";
+import { log } from "@/lib/log";
 
 import { midtransTime } from "./mapping";
 import type { MidtransTransaction, SnapCustomer, SnapItem } from "./types";
@@ -44,12 +45,12 @@ async function request(url: string, init: RequestInit): Promise<Record<string, u
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch (error) {
-    console.error("[midtrans]", url, error);
+    log("error", "midtrans.unreachable", { path: new URL(url).pathname, message: String(error) });
     throw new MidtransError("Layanan pembayaran tidak merespons. Coba lagi.");
   }
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (res.status >= 500) {
-    console.error("[midtrans]", url, res.status, body);
+    log("error", "midtrans.server_error", { path: new URL(url).pathname, status: res.status });
     throw new MidtransError();
   }
   return { ...body, httpStatus: res.status };
@@ -83,7 +84,10 @@ export async function createSnapTransaction(input: {
     }),
   });
   if (typeof body.token !== "string") {
-    console.error("[midtrans] snap", body.httpStatus, body.error_messages);
+    log("error", "midtrans.snap_rejected", {
+      status: body.httpStatus,
+      errors: body.error_messages,
+    });
     throw new MidtransError();
   }
   return { token: body.token, redirectUrl: String(body.redirect_url ?? "") };
@@ -103,7 +107,7 @@ export async function cancelTransaction(
   if (code === "200") return "cancelled";
   if (code === "404") return "not_found";
   // 412: status tidak bisa dibatalkan (mis. sudah settlement/expire).
-  console.warn("[midtrans] cancel", gatewayOrderId, code, body.status_message);
+  log("warn", "midtrans.cancel_rejected", { gatewayOrderId, code, message: body.status_message });
   return "not_cancellable";
 }
 

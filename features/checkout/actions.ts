@@ -9,6 +9,7 @@ import { createShipmentForOrder } from "@/features/fulfillment/shipment";
 import { getCurrentUser } from "@/lib/auth/session";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { getTransactionStatus } from "@/lib/midtrans/client";
+import { RATE_LIMITED_MESSAGE, rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -31,6 +32,9 @@ export async function getShippingRates(addressId: string): Promise<ShippingQuote
   }
   const user = await getCurrentUser();
   if (!user) return { ok: false, message: SESSION_EXPIRED };
+  if (!(await rateLimit("shippingRates", user.id))) {
+    return { ok: false, message: RATE_LIMITED_MESSAGE };
+  }
 
   try {
     return await quoteShipping(await createClient(), addressId);
@@ -64,6 +68,7 @@ export async function createOrderAndPay(input: unknown): Promise<CheckoutResult>
   if (!user) return { ok: false, message: SESSION_EXPIRED };
   const parsed = checkoutSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: "Data checkout tidak valid." };
+  if (!(await rateLimit("checkout", user.id))) return { ok: false, message: RATE_LIMITED_MESSAGE };
   const { addressId, courierCode, serviceCode, note, expectedTotal } = parsed.data;
 
   const supabase = await createClient();
@@ -164,6 +169,7 @@ async function myOrderId(orderNumber: string): Promise<string | null> {
 export async function payOrder(orderNumber: string, changeMethod = false): Promise<PaymentResult> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, message: SESSION_EXPIRED };
+  if (!(await rateLimit("payOrder", user.id))) return { ok: false, message: RATE_LIMITED_MESSAGE };
   const orderId = await myOrderId(orderNumber);
   if (!orderId) return { ok: false, message: "Pesanan tidak ditemukan." };
 
@@ -209,6 +215,7 @@ export async function cancelMyOrder(
 export async function syncPaymentStatus(orderNumber: string): Promise<{ changed: boolean }> {
   const user = await getCurrentUser();
   if (!user) return { changed: false };
+  if (!(await rateLimit("syncPayment", user.id))) return { changed: false };
   const orderId = await myOrderId(orderNumber);
   if (!orderId) return { changed: false };
 

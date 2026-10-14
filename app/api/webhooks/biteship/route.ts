@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 
 import { applyBiteshipEvent, type BiteshipEvent } from "@/features/fulfillment/biteship";
 import { biteshipWebhookEnv } from "@/lib/env/server";
+import { errorMessage, log } from "@/lib/log";
 
 /**
  * Webhook Biteship (event order.status / order.waybill_id / order.price).
@@ -33,16 +34,28 @@ export async function POST(request: Request) {
 
   const auth = authorized(request);
   if (auth === "unconfigured") {
-    console.error("[webhook:biteship] BITESHIP_WEBHOOK_SECRET belum diisi");
+    log("error", "webhook.biteship_unconfigured");
     return Response.json({ error: "webhook not configured" }, { status: 503 });
   }
-  if (!auth) return Response.json({ error: "unauthorized" }, { status: 401 });
+  if (!auth) {
+    log("warn", "webhook.biteship_unauthorized", { biteshipOrderId: event.order_id });
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
 
   try {
     const outcome = await applyBiteshipEvent(event);
+    log("info", "webhook.biteship", {
+      biteshipOrderId: event.order_id,
+      event: event.event ?? null,
+      status: event.status ?? null,
+      outcome,
+    });
     return Response.json({ ok: true, outcome });
   } catch (error) {
-    console.error("[webhook:biteship]", event.order_id, error);
+    log("error", "webhook.biteship_failed", {
+      biteshipOrderId: event.order_id,
+      message: errorMessage(error),
+    });
     return Response.json({ error: "temporary failure" }, { status: 500 });
   }
 }

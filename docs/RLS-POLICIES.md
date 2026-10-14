@@ -73,24 +73,27 @@ Catatan: tabel admin-only (mis. `order_internal_notes`, `stock_adjustments`) tet
 
 ## 4. Lokasi Implementasi
 
-| Migrasi                    | Isi                                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `*_base.sql`               | extensions (`pg_trgm`, `pg_cron`), enums, schema `private`, default privileges, nomor order                         |
-| `*_profiles_addresses.sql` | profiles, addresses, store_settings, trigger signup                                                                 |
-| `*_catalog.sql`            | katalog + `stock_adjustments`                                                                                       |
-| `*_cart.sql`               | carts, cart_items                                                                                                   |
-| `*_orders.sql`             | orders, order_items, payments, stock_reservations, history, notes, shipments                                        |
-| `*_rls.sql`                | `private.is_admin()`, RLS, grants, semua policy                                                                     |
-| `*_storage.sql`            | bucket `product-images` + policy                                                                                    |
-| `*_rpc_catalog_cart.sql`   | `get_variant_availability`, `get_or_create_cart`, `merge_guest_cart`                                                |
-| `*_rpc_orders.sql`         | `create_order`, `cancel_order`, `confirm_payment`, `release_reservations`, `expire_pending_orders` + jadwal pg_cron |
-| `*_rpc_admin.sql`          | `admin_create_product`, `admin_update_product`, `admin_get_stock`, `admin_adjust_stock`, `admin_set_role`           |
-| `*_product_listings.sql`   | view `product_listings` (security_invoker)                                                                          |
-| `*_preorder.sql`           | kolom pre-order produk + snapshot di `order_items`                                                                  |
-| `*_cart_adopt_guest.sql`   | `merge_guest_cart` → `adopted` / `kept`                                                                             |
-| `*_address_rules.sql`      | trigger buku alamat (satu utama, maks. 20)                                                                          |
-| `*_shipment_tracking.sql`  | `shipments.tracking_id`, `tracking_url` (link lacak Biteship)                                                       |
-| `*_admin_orders.sql`       | `admin_list_users` (email dari auth.users), `admin_dashboard_stats` (agregasi omzet/antrian/stok menipis)           |
+| Migrasi                     | Isi                                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `*_base.sql`                | extensions (`pg_trgm`, `pg_cron`), enums, schema `private`, default privileges, nomor order                         |
+| `*_profiles_addresses.sql`  | profiles, addresses, store_settings, trigger signup                                                                 |
+| `*_catalog.sql`             | katalog + `stock_adjustments`                                                                                       |
+| `*_cart.sql`                | carts, cart_items                                                                                                   |
+| `*_orders.sql`              | orders, order_items, payments, stock_reservations, history, notes, shipments                                        |
+| `*_rls.sql`                 | `private.is_admin()`, RLS, grants, semua policy                                                                     |
+| `*_storage.sql`             | bucket `product-images` + policy                                                                                    |
+| `*_rpc_catalog_cart.sql`    | `get_variant_availability`, `get_or_create_cart`, `merge_guest_cart`                                                |
+| `*_rpc_orders.sql`          | `create_order`, `cancel_order`, `confirm_payment`, `release_reservations`, `expire_pending_orders` + jadwal pg_cron |
+| `*_rpc_admin.sql`           | `admin_create_product`, `admin_update_product`, `admin_get_stock`, `admin_adjust_stock`, `admin_set_role`           |
+| `*_product_listings.sql`    | view `product_listings` (security_invoker)                                                                          |
+| `*_preorder.sql`            | kolom pre-order produk + snapshot di `order_items`                                                                  |
+| `*_cart_adopt_guest.sql`    | `merge_guest_cart` → `adopted` / `kept`                                                                             |
+| `*_address_rules.sql`       | trigger buku alamat (satu utama, maks. 20)                                                                          |
+| `*_shipment_tracking.sql`   | `shipments.tracking_id`, `tracking_url` (link lacak Biteship)                                                       |
+| `*_admin_orders.sql`        | `admin_list_users` (email dari auth.users), `admin_dashboard_stats` (agregasi omzet/antrian/stok menipis)           |
+| `*_store_contact_email.sql` | `store_settings.email` (kontak publik, dibaca server & di-cache)                                                    |
+| `*_rate_limit.sql`          | `private.rate_limits` + `check_rate_limit` (service role saja) + cron cleanup                                       |
+| `*_cron_health.sql`         | `admin_cron_health` (status job pg_cron untuk dashboard)                                                            |
 
 ---
 

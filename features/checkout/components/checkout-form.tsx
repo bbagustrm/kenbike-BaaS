@@ -293,6 +293,15 @@ export function CheckoutForm({ addresses }: { addresses: Address[] }) {
           </Button>
           <p className="text-xs text-muted-foreground">
             Stok ditahan 24 jam setelah pesanan dibuat. Selesaikan pembayaran sebelum batas waktu.
+            Dengan membayar, kamu menyetujui{" "}
+            <Link href="/terms" target="_blank" className="underline underline-offset-4">
+              Syarat &amp; Ketentuan
+            </Link>{" "}
+            serta{" "}
+            <Link href="/returns" target="_blank" className="underline underline-offset-4">
+              Kebijakan Pengembalian
+            </Link>
+            .
           </p>
         </CardContent>
       </Card>

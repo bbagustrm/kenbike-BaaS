@@ -20,6 +20,7 @@ const EMPTY: StoreSettingsInput = {
   storeName: "KenBike",
   contactName: "",
   phone: "",
+  email: "",
   addressLine: "",
   area: null,
   note: "",
@@ -81,17 +82,30 @@ export function StoreSettingsForm({ initial }: { initial: StoreSettingsInput | n
                 <FieldError>{errors.contactName?.message}</FieldError>
               </Field>
             </div>
-            <Field data-invalid={invalid(errors.phone)} className="sm:max-w-xs">
-              <FieldLabel htmlFor="phone">Nomor HP</FieldLabel>
-              <Input
-                id="phone"
-                type="tel"
-                inputMode="tel"
-                aria-invalid={invalid(errors.phone)}
-                {...register("phone")}
-              />
-              <FieldError>{errors.phone?.message}</FieldError>
-            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field data-invalid={invalid(errors.phone)}>
+                <FieldLabel htmlFor="phone">Nomor HP</FieldLabel>
+                <Input
+                  id="phone"
+                  type="tel"
+                  inputMode="tel"
+                  aria-invalid={invalid(errors.phone)}
+                  {...register("phone")}
+                />
+                <FieldError>{errors.phone?.message}</FieldError>
+              </Field>
+              <Field data-invalid={invalid(errors.email)}>
+                <FieldLabel htmlFor="email">Email kontak</FieldLabel>
+                <Input
+                  id="email"
+                  type="email"
+                  aria-invalid={invalid(errors.email)}
+                  {...register("email")}
+                />
+                <FieldDescription>Tampil di halaman Kontak & kebijakan.</FieldDescription>
+                <FieldError>{errors.email?.message}</FieldError>
+              </Field>
+            </div>
             <Field data-invalid={invalid(errors.area)}>
               <FieldLabel htmlFor="area">Kecamatan / kota</FieldLabel>
               <Controller

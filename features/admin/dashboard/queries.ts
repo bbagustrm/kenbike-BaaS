@@ -26,6 +26,13 @@ export type Dashboard = {
   attention: number;
   daily: DailySales[];
   lowStock: Stats["low_stock"];
+  cron: {
+    name: string;
+    active: boolean;
+    lastRunAt: string | null;
+    lastStatus: string | null;
+    failures24h: number;
+  }[];
 };
 
 /** Awal hari ini (WIB) dalam ISO UTC. */
@@ -46,7 +53,7 @@ export async function getDashboard(): Promise<Dashboard> {
     return data as unknown as Stats;
   };
 
-  const [today, week, month, created] = await Promise.all([
+  const [today, week, month, created, cron] = await Promise.all([
     stats(1),
     stats(7),
     stats(30),
@@ -54,7 +61,9 @@ export async function getDashboard(): Promise<Dashboard> {
       .from("orders")
       .select("id", { count: "exact", head: true })
       .gte("created_at", todayStartWib()),
+    supabase.rpc("admin_cron_health"),
   ]);
+  if (cron.error) throw new Error(`admin_cron_health: ${cron.error.message}`);
 
   return {
     revenue: { today: today.revenue, week: week.revenue, month: month.revenue },
@@ -66,5 +75,12 @@ export async function getDashboard(): Promise<Dashboard> {
     attention: month.attention,
     daily: month.daily,
     lowStock: month.low_stock,
+    cron: cron.data.map((j) => ({
+      name: j.job_name,
+      active: j.active,
+      lastRunAt: j.last_run_at,
+      lastStatus: j.last_status,
+      failures24h: j.failures_24h,
+    })),
   };
 }

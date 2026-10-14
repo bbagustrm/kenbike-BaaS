@@ -17,6 +17,11 @@ export const storeSettingsSchema = z.object({
     .min(1, { error: "Nama kontak wajib diisi" })
     .max(120, { error: "Maksimal 120 karakter" }),
   phone: requiredPhoneSchema,
+  /** Email kontak publik (halaman Kontak & legal). */
+  email: z
+    .union([z.email({ error: "Email tidak valid" }), z.literal("")])
+    .nullish()
+    .transform((v) => v || null),
   addressLine: z
     .string()
     .trim()
