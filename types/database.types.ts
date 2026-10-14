@@ -743,6 +743,85 @@ export type Database = {
         }
         Relationships: []
       }
+      refunds: {
+        Row: {
+          account_holder: string | null
+          account_number: string | null
+          amount: number
+          bank_name: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          order_id: string
+          processed_at: string | null
+          processed_by: string | null
+          proof_path: string | null
+          reason: string
+          requested_by: Database["public"]["Enums"]["user_role"]
+          status: Database["public"]["Enums"]["refund_status"]
+          updated_at: string
+        }
+        Insert: {
+          account_holder?: string | null
+          account_number?: string | null
+          amount: number
+          bank_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          order_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          proof_path?: string | null
+          reason: string
+          requested_by: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["refund_status"]
+          updated_at?: string
+        }
+        Update: {
+          account_holder?: string | null
+          account_number?: string | null
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          order_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          proof_path?: string | null
+          reason?: string
+          requested_by?: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["refund_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipments: {
         Row: {
           actual_delivery_date: string | null
@@ -1069,9 +1148,66 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cancel_paid_order: {
+        Args: { p_order_id: string; p_reason: string; p_restock?: boolean }
+        Returns: {
+          attention_reason:
+            | Database["public"]["Enums"]["attention_reason"]
+            | null
+          courier_code: string
+          courier_service: string
+          created_at: string
+          customer_note: string | null
+          expires_at: string
+          id: string
+          order_number: string
+          paid_at: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          profile_id: string
+          shipping_address_snapshot: Json
+          shipping_cost: number
+          shipping_status: Database["public"]["Enums"]["shipping_status"] | null
+          subtotal: number
+          total_amount: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       check_rate_limit: {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: boolean
+      }
+      complete_refund: {
+        Args: { p_note: string; p_order_id: string; p_proof_path: string }
+        Returns: {
+          account_holder: string | null
+          account_number: string | null
+          amount: number
+          bank_name: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          order_id: string
+          processed_at: string | null
+          processed_by: string | null
+          proof_path: string | null
+          reason: string
+          requested_by: Database["public"]["Enums"]["user_role"]
+          status: Database["public"]["Enums"]["refund_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "refunds"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       confirm_payment: {
         Args: { p_order_id: string }
@@ -1163,6 +1299,38 @@ export type Database = {
         }[]
       }
       release_reservations: { Args: { p_order_id: string }; Returns: number }
+      set_refund_account: {
+        Args: {
+          p_account_holder: string
+          p_account_number: string
+          p_bank_name: string
+          p_order_id: string
+        }
+        Returns: {
+          account_holder: string | null
+          account_number: string | null
+          amount: number
+          bank_name: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          order_id: string
+          processed_at: string | null
+          processed_by: string | null
+          proof_path: string | null
+          reason: string
+          requested_by: Database["public"]["Enums"]["user_role"]
+          status: Database["public"]["Enums"]["refund_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "refunds"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       attention_reason:
@@ -1182,10 +1350,12 @@ export type Database = {
       payment_status:
         | "pending_payment"
         | "paid"
+        | "refund_pending"
         | "expired"
         | "failed"
         | "cancelled"
         | "refunded"
+      refund_status: "awaiting_account" | "pending_transfer" | "completed"
       reservation_status: "reserved" | "confirmed" | "released"
       shipping_status:
         | "pending"
@@ -1341,11 +1511,13 @@ export const Constants = {
       payment_status: [
         "pending_payment",
         "paid",
+        "refund_pending",
         "expired",
         "failed",
         "cancelled",
         "refunded",
       ],
+      refund_status: ["awaiting_account", "pending_transfer", "completed"],
       reservation_status: ["reserved", "confirmed", "released"],
       shipping_status: [
         "pending",

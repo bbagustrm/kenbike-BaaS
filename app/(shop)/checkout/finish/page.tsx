@@ -49,6 +49,11 @@ const STATUS: Record<
     description: "Terima kasih! Pesananmu segera kami proses.",
     tone: "ok",
   },
+  refund_pending: {
+    title: "Pesanan dibatalkan",
+    description: "Pesanan dibatalkan setelah dibayar. Dana dikembalikan melalui proses refund.",
+    tone: "bad",
+  },
   expired: {
     title: "Pesanan kedaluwarsa",
     description: "Batas waktu pembayaran terlewati dan stok sudah dilepas.",

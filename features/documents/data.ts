@@ -29,9 +29,9 @@ export type DocumentOrder = {
   total: number;
 };
 
-/** Invoice hanya untuk pesanan yang sudah dibayar (termasuk yang kemudian di-refund). */
+/** Invoice hanya untuk pesanan yang sudah dibayar (termasuk yang kemudian dibatalkan/di-refund). */
 export function canDownloadInvoice(status: PaymentStatus): boolean {
-  return status === "paid" || status === "refunded";
+  return status === "paid" || status === "refund_pending" || status === "refunded";
 }
 
 /** Resi hanya untuk pesanan dibayar yang pengirimannya belum dibatalkan/diretur. */

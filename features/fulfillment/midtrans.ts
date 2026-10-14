@@ -127,11 +127,22 @@ export async function applyMidtransTransaction(tx: MidtransTransaction): Promise
   }
 
   if (mapping.order === "refunded") {
+    // Refund dari dashboard Midtrans (kartu/e-wallet): order lunas atau yang
+    // sudah dibatalkan (menunggu refund) → selesai, termasuk catatan refund-nya.
     await admin
       .from("orders")
       .update({ payment_status: "refunded" })
       .eq("id", payment.order_id)
-      .eq("payment_status", "paid");
+      .in("payment_status", ["paid", "refund_pending"]);
+    await admin
+      .from("refunds")
+      .update({
+        status: "completed",
+        processed_at: new Date().toISOString(),
+        note: "Refund diproses lewat Midtrans",
+      })
+      .eq("order_id", payment.order_id)
+      .neq("status", "completed");
   }
 
   return { outcome: "updated", orderId: payment.order_id };
