@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import type { TimelineEntry } from "../status";
+import type { TimelineEntry } from "@/lib/order-status";
 import { toneDotClass } from "./order-status-badge";
 
 /** Riwayat status order, terbaru di atas. */

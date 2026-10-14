@@ -5,7 +5,9 @@ import {
   FolderTreeIcon,
   LayoutDashboardIcon,
   PackageIcon,
+  ReceiptTextIcon,
   SettingsIcon,
+  UsersIcon,
   StoreIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -25,11 +27,12 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 
-// Menu ditambah seiring fitur: Order (M9), Pengguna (M9).
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboardIcon, exact: true },
+  { href: "/admin/orders", label: "Pesanan", icon: ReceiptTextIcon },
   { href: "/admin/products", label: "Produk", icon: PackageIcon },
   { href: "/admin/categories", label: "Kategori", icon: FolderTreeIcon },
+  { href: "/admin/users", label: "Pengguna", icon: UsersIcon },
   { href: "/admin/settings", label: "Pengaturan toko", icon: SettingsIcon },
 ] as const;
 

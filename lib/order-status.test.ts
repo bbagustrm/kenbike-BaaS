@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildTimeline, orderDisplayStatus, parseOrderFilter } from "./status";
+import { buildTimeline, orderDisplayStatus, parseOrderFilter } from "./order-status";
 
 describe("orderDisplayStatus", () => {
   it.each([

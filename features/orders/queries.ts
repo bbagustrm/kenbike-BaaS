@@ -3,7 +3,12 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database.types";
 
-import { buildTimeline, ORDER_FILTER_QUERY, type OrderFilter, type TimelineEntry } from "./status";
+import {
+  buildTimeline,
+  ORDER_FILTER_QUERY,
+  type OrderFilter,
+  type TimelineEntry,
+} from "@/lib/order-status";
 
 type PaymentStatus = Database["public"]["Enums"]["payment_status"];
 type ShippingStatus = Database["public"]["Enums"]["shipping_status"];

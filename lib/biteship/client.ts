@@ -135,3 +135,11 @@ export async function createOrder(input: CreateBiteshipOrderInput): Promise<{
     trackingUrl: data.courier?.link ?? null,
   };
 }
+
+/** Batalkan order pengiriman (hanya bisa sebelum kurir mengambil paket). */
+export async function cancelOrder(biteshipOrderId: string, reason: string): Promise<void> {
+  await request(`/v1/orders/${encodeURIComponent(biteshipOrderId)}`, {
+    method: "DELETE",
+    body: JSON.stringify({ cancellation_reason: reason.slice(0, 200) }),
+  });
+}

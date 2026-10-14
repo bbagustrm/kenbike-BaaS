@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
-import { ORDER_FILTERS, type OrderFilter } from "../status";
+import { ORDER_FILTERS, type OrderFilter } from "@/lib/order-status";
 
 export function ordersHref(filter?: OrderFilter, page = 1) {
   const sp = new URLSearchParams();

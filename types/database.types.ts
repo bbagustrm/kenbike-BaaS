@@ -981,6 +981,10 @@ export type Database = {
         Returns: number
       }
       admin_create_product: { Args: { payload: Json }; Returns: string }
+      admin_dashboard_stats: {
+        Args: { p_days?: number; p_low_stock?: number }
+        Returns: Json
+      }
       admin_get_stock: {
         Args: { variant_ids: string[] }
         Returns: {
@@ -988,6 +992,25 @@ export type Database = {
           quantity: number
           reserved: number
           variant_id: string
+        }[]
+      }
+      admin_list_users: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_role?: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_sign_in_at: string
+          order_count: number
+          phone: string
+          role: Database["public"]["Enums"]["user_role"]
+          total_count: number
         }[]
       }
       admin_set_role: {
