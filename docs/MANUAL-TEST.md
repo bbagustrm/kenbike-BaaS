@@ -22,10 +22,10 @@ dan Biteship **test key**. Tidak ada uang/kurir sungguhan.
 
 Data uji Midtrans sandbox:
 
-| Metode | Data |
-|---|---|
-| Kartu sukses | `4811 1111 1111 1114`, CVV `123`, exp bulan/tahun mana pun di masa depan, OTP `112233` |
-| Kartu ditolak | `4911 1111 1111 1113` |
+| Metode                         | Data                                                                                                           |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Kartu sukses                   | `4811 1111 1111 1114`, CVV `123`, exp bulan/tahun mana pun di masa depan, OTP `112233`                         |
+| Kartu ditolak                  | `4911 1111 1111 1113`                                                                                          |
 | Virtual Account / QRIS / GoPay | Bayar lewat simulator: https://simulator.sandbox.midtrans.com (pilih bank/metode, tempel nomor VA atau URL QR) |
 
 Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
@@ -95,6 +95,7 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
       ```
 
       Ulangi dengan `"status":"delivered"`.
+
 - [ ] Pembeli → detail pesanan: timeline berubah menjadi **Dikirim** lalu **Selesai**; nomor resi tampil.
 - [ ] Kirim event yang sama dua kali → respons `"outcome":"duplicate"`, timeline tidak dobel.
 - [ ] Secret salah → `401`.
