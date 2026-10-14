@@ -28,7 +28,10 @@ import {
   LabelButton,
 } from "@/features/documents";
 import { StatusBadge } from "@/features/orders";
-import { formatDateTime } from "@/lib/format";
+import { CancelOrderDialog, isCancellable, RefundPanel } from "@/features/refunds";
+import { adminCancelOrder } from "@/features/refunds/actions";
+import { getRefund } from "@/features/refunds/queries";
+import { formatDateTime, formatRupiah } from "@/lib/format";
 import { orderDisplayStatus } from "@/lib/order-status";
 
 export const metadata: Metadata = { title: "Detail pesanan · Admin" };
@@ -37,6 +40,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   const { orderNumber } = await params;
   const order = await getAdminOrder(decodeURIComponent(orderNumber));
   if (!order) notFound();
+  const refund = await getRefund(order.id);
 
   const status = orderDisplayStatus(order.paymentStatus, order.shippingStatus);
   const paid = order.paymentStatus === "paid";
@@ -85,9 +89,17 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           !order.shipment?.biteshipOrderId &&
           order.attentionReason !== "late_payment_out_of_stock"
         }
-        canCancelShipment={paid && shippingOpen && Boolean(order.shipment?.biteshipOrderId)}
-        canMarkRefunded={paid && shippingOpen}
-      />
+      >
+        {isCancellable(order.paymentStatus, order.shippingStatus) && (
+          <CancelOrderDialog
+            orderId={order.id}
+            total={formatRupiah(order.total)}
+            action={adminCancelOrder}
+            admin
+            size="sm"
+          />
+        )}
+      </OrderActions>
 
       <div className="grid items-start gap-6 xl:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
@@ -231,6 +243,8 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
         </div>
 
         <div className="space-y-6">
+          {refund && <RefundPanel orderId={order.id} refund={refund} admin />}
+
           <Card>
             <CardHeader>
               <CardTitle>Pelanggan</CardTitle>

@@ -7,7 +7,6 @@ import { z } from "zod";
 import { applyMidtransTransaction } from "@/features/fulfillment/midtrans";
 import { createShipmentForOrder } from "@/features/fulfillment/shipment";
 import type { ActionState } from "@/lib/action-state";
-import { BiteshipError, cancelOrder as cancelBiteshipOrder } from "@/lib/biteship/client";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { getTransactionStatus } from "@/lib/midtrans/client";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -75,78 +74,6 @@ export async function retryShipment(orderId: string): Promise<ActionState> {
     status: "success",
     message: result.created ? "Pengiriman berhasil dibuat." : "Pengiriman sudah ada sebelumnya.",
   };
-}
-
-/** Batalkan order Biteship (sebelum paket diambil kurir). */
-export async function cancelShipment(orderId: string): Promise<ActionState> {
-  const denied = await guard(orderId);
-  if (denied) return denied;
-
-  const admin = createAdminClient();
-  const { data: order } = await admin
-    .from("orders")
-    .select("shipping_status, shipment:shipments (biteship_order_id)")
-    .eq("id", orderId)
-    .maybeSingle();
-  if (!order) return INVALID;
-  if (order.shipping_status !== "pending" && order.shipping_status !== "processing") {
-    return { status: "error", message: "Paket sudah dikirim atau pengiriman sudah selesai." };
-  }
-
-  const biteshipOrderId = order.shipment?.biteship_order_id;
-  if (biteshipOrderId) {
-    try {
-      await cancelBiteshipOrder(biteshipOrderId, "Dibatalkan admin KenBike");
-    } catch (error) {
-      return {
-        status: "error",
-        message: error instanceof BiteshipError ? error.message : "Gagal membatalkan pengiriman.",
-      };
-    }
-  }
-
-  const { error } = await admin
-    .from("orders")
-    .update({ shipping_status: "cancelled" })
-    .eq("id", orderId)
-    .in("shipping_status", ["pending", "processing"]);
-  if (error) return { status: "error", message: dbErrorMessage(error) };
-  await recordEvent(orderId, "shipping", "cancelled");
-
-  refresh();
-  return { status: "success", message: "Pengiriman dibatalkan." };
-}
-
-/**
- * Tandai dana sudah dikembalikan (setelah refund manual di dashboard Midtrans) —
- * jalur untuk bayar telat tanpa stok, nominal tidak cocok, atau bayar dobel
- * (khusus bayar dobel, order tetap paid: gunakan "Selesaikan" setelah refund).
- */
-export async function markRefunded(orderId: string): Promise<ActionState> {
-  const denied = await guard(orderId);
-  if (denied) return denied;
-
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("orders")
-    .update({ payment_status: "refunded", attention_reason: null })
-    .eq("id", orderId)
-    .eq("payment_status", "paid")
-    // Bayar telat tanpa stok: shipping_status masih null (NOT IN tidak cocok dengan null).
-    .or("shipping_status.is.null,shipping_status.not.in.(shipped,delivered)")
-    .select("id")
-    .maybeSingle();
-  if (error) return { status: "error", message: dbErrorMessage(error) };
-  if (!data) {
-    return {
-      status: "error",
-      message: "Hanya order lunas yang belum dikirim yang bisa ditandai refund.",
-    };
-  }
-  await recordEvent(orderId, "payment", "refunded");
-
-  refresh();
-  return { status: "success", message: "Order ditandai sudah di-refund." };
 }
 
 /** Hapus tanda "perlu tindakan" setelah ditangani (dicatat di timeline). */

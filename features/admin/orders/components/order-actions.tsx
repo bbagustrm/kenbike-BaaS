@@ -9,20 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionState } from "@/lib/action-state";
 
-import {
-  cancelShipment,
-  markRefunded,
-  resolveAttention,
-  retryShipment,
-  syncOrderPayment,
-} from "../actions";
+import { resolveAttention, retryShipment, syncOrderPayment } from "../actions";
 
 type OrderActionsProps = {
   orderId: string;
   canCreateShipment: boolean;
-  canCancelShipment: boolean;
-  canMarkRefunded: boolean;
   hasAttention: boolean;
+  /** Slot aksi lain (mis. "Batalkan & refund") agar tampil dalam satu baris. */
+  children?: React.ReactNode;
 };
 
 /** Aksi admin pada satu order; setiap aksi dicatat di timeline. */
@@ -57,30 +51,7 @@ export function OrderActions(props: OrderActionsProps) {
           onConfirm={() => resolveAttention(props.orderId)}
         />
       )}
-      {props.canMarkRefunded && (
-        <ConfirmDialog
-          trigger={<Button variant="outline" size="sm" disabled={pending} />}
-          triggerLabel="Tandai sudah refund"
-          title="Tandai pesanan sudah di-refund?"
-          description="Lakukan refund di dashboard Midtrans terlebih dahulu. Status pembayaran berubah menjadi “Dana dikembalikan”."
-          confirmLabel="Tandai refund"
-          destructive
-          onConfirm={() => markRefunded(props.orderId)}
-        />
-      )}
-      {props.canCancelShipment && (
-        <ConfirmDialog
-          trigger={
-            <Button variant="ghost" size="sm" className="text-destructive" disabled={pending} />
-          }
-          triggerLabel="Batalkan pengiriman"
-          title="Batalkan pengiriman?"
-          description="Order di Biteship dibatalkan (hanya bisa sebelum paket diambil kurir)."
-          confirmLabel="Batalkan pengiriman"
-          destructive
-          onConfirm={() => cancelShipment(props.orderId)}
-        />
-      )}
+      {props.children}
     </div>
   );
 }

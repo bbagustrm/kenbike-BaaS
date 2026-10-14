@@ -24,6 +24,7 @@ export type Dashboard = {
   toShip: number;
   shipped: number;
   attention: number;
+  refundPending: number;
   daily: DailySales[];
   lowStock: Stats["low_stock"];
   cron: {
@@ -53,7 +54,7 @@ export async function getDashboard(): Promise<Dashboard> {
     return data as unknown as Stats;
   };
 
-  const [today, week, month, created, cron] = await Promise.all([
+  const [today, week, month, created, refunds, cron] = await Promise.all([
     stats(1),
     stats(7),
     stats(30),
@@ -61,6 +62,10 @@ export async function getDashboard(): Promise<Dashboard> {
       .from("orders")
       .select("id", { count: "exact", head: true })
       .gte("created_at", todayStartWib()),
+    supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("payment_status", "refund_pending"),
     supabase.rpc("admin_cron_health"),
   ]);
   if (cron.error) throw new Error(`admin_cron_health: ${cron.error.message}`);
@@ -73,6 +78,7 @@ export async function getDashboard(): Promise<Dashboard> {
     toShip: month.to_ship,
     shipped: month.shipped,
     attention: month.attention,
+    refundPending: refunds.count ?? 0,
     daily: month.daily,
     lowStock: month.low_stock,
     cron: cron.data.map((j) => ({

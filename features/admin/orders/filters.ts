@@ -3,18 +3,19 @@ import { z } from "zod";
 import { ORDER_FILTER_QUERY, ORDER_FILTERS, type OrderFilter } from "@/lib/order-status";
 import { firstParam } from "@/lib/search";
 
-/** Filter daftar order admin: status customer + "perlu tindakan". */
+/** Filter daftar order admin: status customer + "perlu tindakan" + "menunggu refund". */
 export const ADMIN_ORDER_FILTERS = {
   attention: "Perlu tindakan",
+  refund: "Menunggu refund",
   ...ORDER_FILTERS,
 } as const;
 
 export type AdminOrderFilter = keyof typeof ADMIN_ORDER_FILTERS;
 
-export const ADMIN_ORDER_FILTER_QUERY: Record<
-  Exclude<AdminOrderFilter, "attention">,
-  string
-> = ORDER_FILTER_QUERY;
+export const ADMIN_ORDER_FILTER_QUERY: Record<Exclude<AdminOrderFilter, "attention">, string> = {
+  ...ORDER_FILTER_QUERY,
+  refund: "payment_status.eq.refund_pending",
+};
 
 export type AdminOrderListParams = {
   filter?: AdminOrderFilter;

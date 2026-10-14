@@ -26,6 +26,13 @@ const RAISED_MESSAGES: Record<string, string> = {
   invalid_courier: "Pilih layanan kurir terlebih dahulu.",
   invalid_shipping_cost: "Ongkir tidak valid. Pilih kurir lagi.",
   order_not_cancellable: "Pesanan ini sudah tidak bisa dibatalkan.",
+  order_not_found: "Pesanan tidak ditemukan.",
+  invalid_reason: "Tulis alasan pembatalan (maksimal 500 karakter).",
+  invalid_account: "Data rekening tidak valid. Periksa nama bank, nomor, dan pemilik rekening.",
+  refund_not_editable: "Data rekening tidak bisa diubah karena refund sudah selesai.",
+  refund_not_found: "Refund tidak ditemukan atau sudah selesai.",
+  proof_or_note_required: "Unggah bukti transfer atau tulis catatan.",
+  invalid_proof_path: "Bukti transfer tidak valid. Unggah ulang.",
   last_admin: "Tidak bisa menurunkan admin terakhir. Jadikan pengguna lain admin terlebih dahulu.",
   user_not_found: "Pengguna tidak ditemukan.",
 };

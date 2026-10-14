@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { adminOrdersHref, parseAdminOrderParams, wibDayStart } from "./filters";
+import {
+  ADMIN_ORDER_FILTER_QUERY,
+  adminOrdersHref,
+  parseAdminOrderParams,
+  wibDayStart,
+} from "./filters";
 
 describe("parseAdminOrderParams", () => {
   it("menerima filter & tanggal valid, membuang yang tidak", () => {
@@ -41,5 +46,12 @@ describe("adminOrdersHref", () => {
 describe("wibDayStart", () => {
   it("tengah malam WIB = 17:00 UTC hari sebelumnya", () => {
     expect(wibDayStart("2026-10-14")).toBe("2026-10-13T17:00:00.000Z");
+  });
+});
+
+describe("filter menunggu refund", () => {
+  it("diterima & dipetakan ke refund_pending", () => {
+    expect(parseAdminOrderParams({ status: "refund" }).filter).toBe("refund");
+    expect(ADMIN_ORDER_FILTER_QUERY.refund).toBe("payment_status.eq.refund_pending");
   });
 });
