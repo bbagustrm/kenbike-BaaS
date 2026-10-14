@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PaymentPanel, SnapScript } from "@/features/checkout";
+import { canDownloadInvoice, InvoiceButton } from "@/features/documents";
 import { BuyAgainButton, OrderTimeline, orderDisplayStatus, StatusBadge } from "@/features/orders";
 import { getMyOrder } from "@/features/orders/queries";
 import { requireUser } from "@/lib/auth/session";
@@ -66,7 +67,12 @@ async function OrderDetail({ orderNumber }: { orderNumber: string }) {
             {order.paidAt && ` · Dibayar ${formatDateTime(order.paidAt)}`}
           </p>
         </div>
-        {finished && <BuyAgainButton orderNumber={order.orderNumber} />}
+        <div className="flex flex-wrap gap-2">
+          {canDownloadInvoice(order.paymentStatus) && (
+            <InvoiceButton orderNumber={order.orderNumber} />
+          )}
+          {finished && <BuyAgainButton orderNumber={order.orderNumber} />}
+        </div>
       </div>
 
       {pending && (

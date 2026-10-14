@@ -21,6 +21,12 @@ import { ATTENTION } from "@/features/admin/orders/attention";
 import { InternalNotes } from "@/features/admin/orders/components/internal-notes";
 import { OrderActions } from "@/features/admin/orders/components/order-actions";
 import { getAdminOrder } from "@/features/admin/orders/queries";
+import {
+  canDownloadInvoice,
+  canDownloadLabel,
+  InvoiceButton,
+  LabelButton,
+} from "@/features/documents";
 import { StatusBadge } from "@/features/orders";
 import { formatDateTime } from "@/lib/format";
 import { orderDisplayStatus } from "@/lib/order-status";
@@ -56,6 +62,18 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           <AlertTitle>Perlu tindakan: {ATTENTION[order.attentionReason].label}</AlertTitle>
           <AlertDescription>{ATTENTION[order.attentionReason].guide}</AlertDescription>
         </Alert>
+      )}
+
+      {(canDownloadInvoice(order.paymentStatus) ||
+        canDownloadLabel(order.paymentStatus, order.shippingStatus)) && (
+        <div className="flex flex-wrap gap-2">
+          {canDownloadInvoice(order.paymentStatus) && (
+            <InvoiceButton orderNumber={order.orderNumber} admin size="sm" />
+          )}
+          {canDownloadLabel(order.paymentStatus, order.shippingStatus) && (
+            <LabelButton orderNumber={order.orderNumber} />
+          )}
+        </div>
       )}
 
       <OrderActions

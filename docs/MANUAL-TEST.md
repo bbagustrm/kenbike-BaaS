@@ -96,6 +96,8 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
 
       Ulangi dengan `"status":"delivered"`.
 
+- [ ] Pembeli → detail pesanan → **Unduh invoice** menghasilkan PDF A4; pesanan yang belum dibayar
+      tidak punya tombol invoice, dan membuka `/api/orders/<nomor pesanan orang lain>/invoice` → 404.
 - [ ] Pembeli → detail pesanan: timeline berubah menjadi **Dikirim** lalu **Selesai**; nomor resi tampil.
 - [ ] Kirim event yang sama dua kali → respons `"outcome":"duplicate"`, timeline tidak dobel.
 - [ ] Secret salah → `401`.
@@ -110,6 +112,10 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
       Midtrans sandbox).
 - [ ] **Selesaikan** tanda "Perlu tindakan".
 - [ ] Pengguna: daftar & pencarian tampil.
+- [ ] Detail pesanan dibayar → **Unduh invoice** (PDF A4, cap LUNAS, SKU tampil) dan **Unduh resi**
+      (barcode nomor resi / nomor pesanan). Coba tiap ukuran di menu ▾ (100×150, 100×100, roll 80,
+      roll 58) dan **Ukuran kustom…**; ukuran terakhir diingat setelah refresh.
+- [ ] Pesanan belum dibayar / dibatalkan: tombol resi tidak muncul.
 - [ ] Dashboard: angka penjualan dan grafik sesuai pesanan uji; kartu **Job terjadwal** menampilkan
       `expire-pending-orders` & `cleanup-rate-limits` tanpa kegagalan.
 - [ ] Pengaturan toko: ubah telepon/email → halaman `/contact` ikut berubah.

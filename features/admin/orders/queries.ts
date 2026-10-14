@@ -112,6 +112,7 @@ export type AdminOrderDetail = {
     imagePath: string | null;
     quantity: number;
     price: number;
+    weightGram: number;
   }[];
   payments: {
     gatewayOrderId: string;
@@ -155,7 +156,7 @@ export async function getAdminOrder(orderNumber: string): Promise<AdminOrderDeta
        customer_note, shipping_address_snapshot, profile_id,
        customer:profiles (full_name, phone),
        items:order_items (quantity, price_at_purchase, product_name_snapshot,
-         variant_label_snapshot, image_url_snapshot, created_at,
+         variant_label_snapshot, image_url_snapshot, weight_gram_snapshot, created_at,
          variant:product_variants (sku)),
        payments (gateway_order_id, status, payment_type, payment_channel, amount, created_at,
          expires_at, raw_response),
@@ -200,6 +201,7 @@ export async function getAdminOrder(orderNumber: string): Promise<AdminOrderDeta
       imagePath: i.image_url_snapshot,
       quantity: i.quantity,
       price: i.price_at_purchase,
+      weightGram: i.weight_gram_snapshot,
     })),
     payments: [...o.payments].sort(byTime).map((p) => ({
       gatewayOrderId: p.gateway_order_id,

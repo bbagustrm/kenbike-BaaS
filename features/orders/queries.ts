@@ -60,7 +60,7 @@ export async function listMyOrders(params: { filter?: OrderFilter; page: number 
   return { orders, total, pageCount: Math.ceil(total / ORDERS_PAGE_SIZE) };
 }
 
-type AddressSnapshot = {
+export type AddressSnapshot = {
   recipient_name: string;
   phone: string;
   address_line: string;
