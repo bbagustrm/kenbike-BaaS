@@ -1150,6 +1150,18 @@ export type Database = {
         }[]
       }
       merge_guest_cart: { Args: { items: Json }; Returns: string }
+      public_store_info: {
+        Args: never
+        Returns: {
+          address_line: string
+          city: string
+          email: string
+          phone: string
+          postal_code: string
+          province: string
+          store_name: string
+        }[]
+      }
       release_reservations: { Args: { p_order_id: string }; Returns: number }
     }
     Enums: {

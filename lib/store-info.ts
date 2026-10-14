@@ -2,7 +2,7 @@ import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export type StoreInfo = {
   name: string;
@@ -15,7 +15,8 @@ const FALLBACK: StoreInfo = { name: "KenBike", phone: null, email: null, address
 
 /**
  * Info kontak toko untuk halaman publik (Kontak, kebijakan, footer).
- * store_settings hanya bisa dibaca admin → service role, hanya kolom publik.
+ * store_settings admin-only → RPC public_store_info membuka kolom kontak saja,
+ * sehingga cukup kunci anon (juga saat build/prerender di CI).
  * Di-cache; diperbarui lewat updateTag("store-info") saat admin menyimpan.
  */
 export async function getStoreInfo(): Promise<StoreInfo> {
@@ -23,11 +24,7 @@ export async function getStoreInfo(): Promise<StoreInfo> {
   cacheTag("store-info");
   cacheLife("days");
 
-  const { data, error } = await createAdminClient()
-    .from("store_settings")
-    .select("store_name, phone, email, address_line, city, province, postal_code")
-    .eq("is_active", true)
-    .maybeSingle();
+  const { data, error } = await createPublicClient().rpc("public_store_info").maybeSingle();
   if (error) throw new Error(`getStoreInfo: ${error.message}`);
   if (!data) return FALLBACK;
 

@@ -14,3 +14,11 @@ select pg_temp.check('kunci lain tidak terpengaruh', public.check_rate_limit('uj
 select pg_temp.throws('kunci kosong ditolak',
   $$ select public.check_rate_limit(null, 1, 60) $$, '22023');
 reset role;
+
+-- #78 — public_store_info: anon boleh membaca kontak toko, tabel tetap tertutup.
+set local role anon;
+select pg_temp.check('anon bisa memanggil public_store_info',
+  (select count(*) <= 1 from public.public_store_info()));
+select pg_temp.throws('anon tetap tidak bisa membaca store_settings',
+  $$ select 1 from public.store_settings $$, '42501');
+reset role;
