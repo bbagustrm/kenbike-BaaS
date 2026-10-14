@@ -12,6 +12,8 @@ describe("orderDisplayStatus", () => {
     ["paid", "returned", "Dikembalikan"],
     ["expired", null, "Kedaluwarsa"],
     ["cancelled", null, "Dibatalkan"],
+    ["refund_pending", "cancelled", "Menunggu refund"],
+    ["refunded", "cancelled", "Dana dikembalikan"],
   ] as const)("%s/%s → %s", (payment, shipping, label) => {
     expect(orderDisplayStatus(payment, shipping).label).toBe(label);
   });

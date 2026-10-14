@@ -19,6 +19,8 @@ export function orderDisplayStatus(
       return { label: "Dibatalkan", tone: "neutral" };
     case "failed":
       return { label: "Pembayaran gagal", tone: "danger" };
+    case "refund_pending":
+      return { label: "Menunggu refund", tone: "warning" };
     case "refunded":
       return { label: "Dana dikembalikan", tone: "neutral" };
     case "paid":
@@ -59,7 +61,7 @@ export const ORDER_FILTER_QUERY: Record<OrderFilter, string> = {
   shipped: "and(payment_status.eq.paid,shipping_status.eq.shipped)",
   done: "and(payment_status.eq.paid,shipping_status.eq.delivered)",
   cancelled:
-    "payment_status.in.(cancelled,expired,failed,refunded),shipping_status.in.(cancelled,returned)",
+    "payment_status.in.(cancelled,expired,failed,refund_pending,refunded),shipping_status.in.(cancelled,returned)",
 };
 
 export type HistoryRow = {
@@ -84,6 +86,10 @@ function labelFor(row: HistoryRow): { label: string; tone: Tone } | null {
         return { label: "Batas waktu pembayaran habis", tone: "neutral" };
       case "cancelled":
         return { label: "Pesanan dibatalkan", tone: "neutral" };
+      case "refund_pending":
+        return { label: "Pesanan dibatalkan, menunggu refund", tone: "warning" };
+      case "refunded":
+        return { label: "Dana dikembalikan", tone: "neutral" };
       default:
         return null;
     }

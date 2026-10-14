@@ -79,8 +79,12 @@ const s = StyleSheet.create({
 });
 
 export function InvoicePdf({ order, store }: { order: DocumentOrder; store: StoreInfo }) {
-  const refunded = order.paymentStatus === "refunded";
-  const stampColor = refunded ? "#b45309" : "#15803d";
+  const stamp =
+    order.paymentStatus === "refunded"
+      ? { text: "DANA DIKEMBALIKAN", color: "#b45309" }
+      : order.paymentStatus === "refund_pending"
+        ? { text: "DIBATALKAN", color: "#b91c1c" }
+        : { text: "LUNAS", color: "#15803d" };
   const a = order.address;
 
   return (
@@ -102,8 +106,8 @@ export function InvoicePdf({ order, store }: { order: DocumentOrder; store: Stor
           <View>
             <Text style={s.title}>INVOICE</Text>
             <Text style={{ textAlign: "right" }}>INV/{order.orderNumber}</Text>
-            <Text style={[s.stamp, { color: stampColor, borderColor: stampColor }]}>
-              {refunded ? "DANA DIKEMBALIKAN" : "LUNAS"}
+            <Text style={[s.stamp, { color: stamp.color, borderColor: stamp.color }]}>
+              {stamp.text}
             </Text>
           </View>
         </View>

@@ -6,6 +6,7 @@ describe("akses dokumen", () => {
   it("invoice hanya setelah dibayar", () => {
     expect(canDownloadInvoice("paid")).toBe(true);
     expect(canDownloadInvoice("refunded")).toBe(true);
+    expect(canDownloadInvoice("refund_pending")).toBe(true);
     expect(canDownloadInvoice("pending_payment")).toBe(false);
     expect(canDownloadInvoice("expired")).toBe(false);
   });
