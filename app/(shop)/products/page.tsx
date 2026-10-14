@@ -50,6 +50,7 @@ async function Catalog({ raw }: { raw: Record<string, string | string[] | undefi
       <CatalogFilters key={JSON.stringify(params)} params={params} categories={categories} />
       {result.items.length > 0 ? (
         <>
+          <h2 className="sr-only">Daftar produk</h2>
           <ProductGrid products={result.items} />
           <CatalogPagination params={params} pageCount={result.pageCount} />
         </>

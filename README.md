@@ -68,6 +68,13 @@ cloudflared tunnel --url http://localhost:3000
 
 Tanpa tunnel pun status pembayaran tetap diperbarui: halaman `/checkout/finish` menanyakan Status API Midtrans setiap 15 detik (logika sama dengan webhook).
 
+### Keamanan & operasional
+
+- **Security headers** (CSP, HSTS, X-Frame-Options, dll.) didefinisikan di `next.config.ts`; HSTS & `upgrade-insecure-requests` hanya bila `NEXT_PUBLIC_SITE_URL` https.
+- **Rate limit** Server Action sensitif (checkout, cek ongkir, cari area, bayar ulang): `lib/rate-limit.ts` → RPC `check_rate_limit`.
+- **Log terstruktur** (`lib/log.ts`): satu baris JSON per event, data sensitif disamarkan. Alert opsional ke Discord lewat `OPS_DISCORD_WEBHOOK_URL`.
+- Checklist go-live: [docs/GO-LIVE.md](docs/GO-LIVE.md).
+
 ## Scripts
 
 | Script                            | Fungsi                                             |

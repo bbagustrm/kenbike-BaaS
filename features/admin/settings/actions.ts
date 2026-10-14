@@ -1,6 +1,6 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { z } from "zod";
 
 import type { ActionState } from "@/lib/action-state";
@@ -29,6 +29,7 @@ export async function saveStoreSettings(input: unknown): Promise<ActionState> {
     store_name: v.storeName,
     contact_name: v.contactName,
     phone: v.phone,
+    email: v.email,
     address_line: v.addressLine,
     city: area.city,
     province: area.province,
@@ -50,6 +51,7 @@ export async function saveStoreSettings(input: unknown): Promise<ActionState> {
     : await supabase.from("store_settings").insert({ ...row, is_active: true });
   if (error) return { status: "error", message: dbErrorMessage(error) };
 
+  updateTag("store-info");
   refresh();
   return { status: "success", message: "Pengaturan toko disimpan." };
 }

@@ -10,7 +10,7 @@ export async function getStoreSettingsForm(): Promise<StoreSettingsInput | null>
   const { data, error } = await supabase
     .from("store_settings")
     .select(
-      "store_name, contact_name, phone, address_line, city, province, postal_code, biteship_area_id, note",
+      "store_name, contact_name, phone, email, address_line, city, province, postal_code, biteship_area_id, note",
     )
     .eq("is_active", true)
     .maybeSingle();
@@ -20,6 +20,7 @@ export async function getStoreSettingsForm(): Promise<StoreSettingsInput | null>
     storeName: data.store_name,
     contactName: data.contact_name,
     phone: data.phone,
+    email: data.email ?? "",
     addressLine: data.address_line,
     area: {
       id: data.biteship_area_id,

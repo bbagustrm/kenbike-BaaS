@@ -10,6 +10,7 @@ import { SalesChart } from "@/features/admin/dashboard/components/sales-chart";
 import { getDashboard } from "@/features/admin/dashboard/queries";
 import { AdminOrderTable } from "@/features/admin/orders/components/admin-order-table";
 import { listAdminOrders } from "@/features/admin/orders/queries";
+import { formatDateTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Dashboard · Admin" };
 
@@ -158,6 +159,35 @@ export default async function AdminHomePage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Job terjadwal</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="divide-y text-sm">
+            {d.cron.map((job) => {
+              const failing = job.lastStatus === "failed" || job.failures24h > 0;
+              return (
+                <li
+                  key={job.name}
+                  className="flex flex-wrap items-center justify-between gap-2 py-2"
+                >
+                  <span className="font-mono text-xs">{job.name}</span>
+                  <span className={failing ? "text-destructive" : "text-muted-foreground"}>
+                    {!job.active
+                      ? "Nonaktif"
+                      : job.lastRunAt
+                        ? `${job.lastStatus === "succeeded" ? "Berhasil" : (job.lastStatus ?? "—")} · ${formatDateTime(job.lastRunAt)}`
+                        : "Belum pernah jalan"}
+                    {job.failures24h > 0 && ` · ${job.failures24h} gagal (24 jam)`}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </CardContent>
+      </Card>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
