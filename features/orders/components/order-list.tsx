@@ -6,7 +6,7 @@ import { ProductImage } from "@/components/shared/product-image";
 import { formatDateTime } from "@/lib/format";
 
 import type { OrderListItem } from "../queries";
-import { orderDisplayStatus } from "../status";
+import { orderDisplayStatus } from "@/lib/order-status";
 import { StatusBadge } from "./order-status-badge";
 
 export function OrderList({ orders }: { orders: OrderListItem[] }) {

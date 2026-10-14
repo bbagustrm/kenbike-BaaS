@@ -89,6 +89,8 @@ Catatan: tabel admin-only (mis. `order_internal_notes`, `stock_adjustments`) tet
 | `*_preorder.sql`           | kolom pre-order produk + snapshot di `order_items`                                                                  |
 | `*_cart_adopt_guest.sql`   | `merge_guest_cart` → `adopted` / `kept`                                                                             |
 | `*_address_rules.sql`      | trigger buku alamat (satu utama, maks. 20)                                                                          |
+| `*_shipment_tracking.sql`  | `shipments.tracking_id`, `tracking_url` (link lacak Biteship)                                                       |
+| `*_admin_orders.sql`       | `admin_list_users` (email dari auth.users), `admin_dashboard_stats` (agregasi omzet/antrian/stok menipis)           |
 
 ---
 

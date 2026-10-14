@@ -26,6 +26,8 @@ const RAISED_MESSAGES: Record<string, string> = {
   invalid_courier: "Pilih layanan kurir terlebih dahulu.",
   invalid_shipping_cost: "Ongkir tidak valid. Pilih kurir lagi.",
   order_not_cancellable: "Pesanan ini sudah tidak bisa dibatalkan.",
+  last_admin: "Tidak bisa menurunkan admin terakhir. Jadikan pengguna lain admin terlebih dahulu.",
+  user_not_found: "Pengguna tidak ditemukan.",
 };
 
 /**

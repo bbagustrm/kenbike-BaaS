@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-import type { Tone } from "../status";
+import type { Tone } from "@/lib/order-status";
 
 const TONE: Record<Tone, string> = {
   neutral: "bg-muted text-muted-foreground",
