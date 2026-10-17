@@ -109,7 +109,7 @@ function NavItems({ pathname }: { pathname: string | null }) {
           </SidebarMenuButton>
           {"badge" in item && (
             <SidebarMenuBadge>
-              <UnreadBadge />
+              <UnreadBadge live />
             </SidebarMenuBadge>
           )}
         </SidebarMenuItem>

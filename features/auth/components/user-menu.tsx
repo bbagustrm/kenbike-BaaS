@@ -1,6 +1,12 @@
 "use client";
 
-import { LayoutDashboardIcon, LogOutIcon, PackageIcon, UserIcon } from "lucide-react";
+import {
+  LayoutDashboardIcon,
+  LogOutIcon,
+  MessagesSquareIcon,
+  PackageIcon,
+  UserIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useTransition } from "react";
 
@@ -15,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { UnreadBadge } from "@/features/chat/components/unread-badge";
 
 import { signOut } from "../actions";
 
@@ -41,13 +48,19 @@ export function UserMenu({ name, email, avatarUrl, isAdmin }: UserMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" size="icon" className="rounded-full" aria-label="Menu akun" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative rounded-full"
+            aria-label="Menu akun"
+          />
         }
       >
         <Avatar className="size-8">
           {avatarUrl && <AvatarImage src={avatarUrl} alt="" referrerPolicy="no-referrer" />}
           <AvatarFallback>{initials(name, email)}</AvatarFallback>
         </Avatar>
+        <UnreadBadge className="absolute -top-1 -right-1 h-4 min-w-4 text-[10px]" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuGroup>
@@ -66,6 +79,13 @@ export function UserMenu({ name, email, avatarUrl, isAdmin }: UserMenuProps) {
         <DropdownMenuItem render={<Link href="/account/orders" />}>
           <PackageIcon />
           Pesanan saya
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          render={<Link href={isAdmin ? "/admin/messages" : "/account/messages"} />}
+        >
+          <MessagesSquareIcon />
+          Pesan
+          <UnreadBadge className="ml-auto" />
         </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem render={<Link href="/admin" />}>

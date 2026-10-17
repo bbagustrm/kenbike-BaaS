@@ -14,6 +14,13 @@ export default function ContactPage() {
     <InfoPage title="Kontak" description="Ada pertanyaan soal produk atau pesanan? Hubungi kami.">
       <StoreContact />
 
+      <h2>Chat dengan kami</h2>
+      <p>
+        Punya akun? Kirim pesan langsung lewat <Link href="/account/messages?new=1">Pesan</Link> —
+        balasan kami muncul di akunmu. Untuk pertanyaan soal pesanan, buka chat dari detail
+        pesanannya.
+      </p>
+
       <h2>Saat menghubungi kami</h2>
       <ul>
         <li>
