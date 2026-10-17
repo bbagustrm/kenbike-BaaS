@@ -9,6 +9,7 @@ import type { ActionState } from "@/lib/action-state";
 import { getCurrentUser } from "@/lib/auth/session";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { RATE_LIMITED_MESSAGE, rateLimit } from "@/lib/rate-limit";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/types/database.types";
 
@@ -147,4 +148,40 @@ export async function openOrderConversation(orderId: string): Promise<ActionStat
   });
   if (error) return { status: "error", message: dbErrorMessage(error) };
   redirect(`/account/messages/${data.id}`);
+}
+
+/**
+ * Admin: buka (atau buat) chat untuk sebuah pesanan, mis. untuk meminta data
+ * rekening refund. Percakapan dibuat atas nama pembeli pemilik pesanan.
+ */
+export async function adminOpenOrderConversation(orderId: string): Promise<ActionState> {
+  const denied = await assertAdminAction();
+  if (denied) return denied;
+  if (!uuid.safeParse(orderId).success) {
+    return { status: "error", message: "Pesanan tidak ditemukan." };
+  }
+
+  const admin = createAdminClient();
+  const { data: order } = await admin
+    .from("orders")
+    .select("profile_id, order_number")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!order) return { status: "error", message: "Pesanan tidak ditemukan." };
+
+  await admin.from("conversations").upsert(
+    {
+      customer_id: order.profile_id,
+      order_id: orderId,
+      subject: `Pesanan ${order.order_number}`,
+    },
+    { onConflict: "order_id", ignoreDuplicates: true },
+  );
+  const { data: conversation } = await admin
+    .from("conversations")
+    .select("id")
+    .eq("order_id", orderId)
+    .single();
+  if (!conversation) return { status: "error", message: "Gagal membuka percakapan." };
+  redirect(`/admin/messages/${conversation.id}`);
 }

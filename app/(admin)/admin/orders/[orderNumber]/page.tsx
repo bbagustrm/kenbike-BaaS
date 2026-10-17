@@ -19,6 +19,7 @@ import {
 import { AdminPageHeader } from "@/features/admin";
 import { ATTENTION } from "@/features/admin/orders/attention";
 import { InternalNotes } from "@/features/admin/orders/components/internal-notes";
+import { OrderChatButton } from "@/features/chat";
 import { OrderActions } from "@/features/admin/orders/components/order-actions";
 import { getAdminOrder } from "@/features/admin/orders/queries";
 import {
@@ -90,6 +91,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           order.attentionReason !== "late_payment_out_of_stock"
         }
       >
+        <OrderChatButton orderId={order.id} admin size="sm" />
         {isCancellable(order.paymentStatus, order.shippingStatus) && (
           <CancelOrderDialog
             orderId={order.id}

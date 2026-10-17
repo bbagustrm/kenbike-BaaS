@@ -19,7 +19,7 @@ export async function cancelPaidOrder(params: {
   reason: string;
   restock: boolean;
   actor: "customer" | "admin";
-}): Promise<ActionState> {
+}): Promise<ActionState & { amount?: number }> {
   const supabase = await createClient();
   const { data: order, error } = await supabase
     .from("orders")
@@ -60,7 +60,7 @@ export async function cancelPaidOrder(params: {
     }
   }
 
-  const { error: rpcError } = await supabase.rpc("cancel_paid_order", {
+  const { data: cancelled, error: rpcError } = await supabase.rpc("cancel_paid_order", {
     p_order_id: order.id,
     p_reason: params.reason,
     p_restock: params.restock,
@@ -75,5 +75,9 @@ export async function cancelPaidOrder(params: {
   }
 
   log("info", "refund.order_cancelled", { orderNumber: order.order_number, actor: params.actor });
-  return { status: "success", message: "Pesanan dibatalkan. Refund menunggu diproses." };
+  return {
+    status: "success",
+    message: "Pesanan dibatalkan. Refund menunggu diproses.",
+    amount: cancelled.total_amount,
+  };
 }

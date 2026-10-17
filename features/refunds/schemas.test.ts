@@ -4,6 +4,7 @@ import {
   accountSchema,
   cancelSchema,
   completeSchema,
+  isAccountOverdue,
   isCancellable,
   isRefundProofPath,
   refundProofPath,
@@ -68,5 +69,14 @@ describe("isCancellable", () => {
     expect(isCancellable("paid", "shipped")).toBe(false);
     expect(isCancellable("refund_pending", "cancelled")).toBe(false);
     expect(isCancellable("pending_payment", null)).toBe(false);
+  });
+});
+
+describe("isAccountOverdue", () => {
+  const now = Date.parse("2026-10-17T00:00:00Z");
+  it("hanya menunggu rekening & lebih dari 2 hari", () => {
+    expect(isAccountOverdue("awaiting_account", "2026-10-14T00:00:00Z", now)).toBe(true);
+    expect(isAccountOverdue("awaiting_account", "2026-10-15T12:00:00Z", now)).toBe(false);
+    expect(isAccountOverdue("pending_transfer", "2026-10-01T00:00:00Z", now)).toBe(false);
   });
 });

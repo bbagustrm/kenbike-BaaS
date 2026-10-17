@@ -125,6 +125,11 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
 - [ ] Pesanan yang dibatalkan admin & rekening belum diisi → tombol **Selesaikan refund** nonaktif;
       admin bisa **Isi data rekening** sendiri (dari chat). Tanpa bukti & tanpa catatan → ditolak;
       hanya catatan → diterima.
+- [ ] **Refund ↔ chat**: setiap pembatalan memunculkan pesan sistem di chat pesanan (alasan,
+      nominal, rekening tersamar `••••1234`); mengubah rekening & menyelesaikan refund juga
+      memunculkan pesan sistem. Panel Refund tampil di halaman percakapan (pembeli bisa mengisi
+      rekening dari sana). **Chat pembeli** di detail pesanan admin membuka/membuat chat pesanan.
+      Refund yang rekeningnya belum diisi > 2 hari menampilkan peringatan di panel admin.
 - [ ] Dashboard: kartu **Menunggu refund** menghitung pesanan tadi; filter **Menunggu refund** di daftar pesanan.
 - [ ] Pesanan yang sudah dikirim: tombol **Batalkan & refund** tidak muncul.
 - [ ] **Selesaikan** tanda "Perlu tindakan".

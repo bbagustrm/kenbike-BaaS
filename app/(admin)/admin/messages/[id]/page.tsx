@@ -20,7 +20,7 @@ import {
   listMessages,
 } from "@/features/chat/queries";
 import { orderDisplayStatus, StatusBadge } from "@/features/orders";
-import { REFUND_STATUS_LABEL } from "@/features/refunds";
+import { REFUND_STATUS_LABEL, RefundPanel } from "@/features/refunds";
 import { getRefund } from "@/features/refunds/queries";
 import { formatRupiah } from "@/lib/format";
 
@@ -99,6 +99,10 @@ export default async function AdminConversationPage({
           </div>
           <ConversationStatusButton conversationId={conversation.id} status={conversation.status} />
         </div>
+
+        {order && refund && refund.status !== "completed" && (
+          <RefundPanel orderId={order.id} refund={refund} admin />
+        )}
 
         <ChatThread
           key={conversation.id}
