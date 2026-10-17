@@ -76,6 +76,11 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
       panel **Refund** menampilkan rekening (bisa diubah) → admin menyelesaikan refund → pembeli
       melihat **Refund selesai** + bukti.
 - [ ] Setelah kurir mengambil paket (webhook `picked`), tombol **Batalkan pesanan** hilang.
+- [ ] **Chat pembeli**: Akun → tab **Pesan** → **Pesan baru** (topik + pesan) → percakapan terbuka.
+      Detail pesanan → **Tanya soal pesanan** → chat pesanan (klik lagi membuka chat yang sama).
+      Halaman Kontak → link **Pesan** (tamu diarahkan login lalu kembali dengan dialog terbuka).
+      Balasan admin muncul tanpa refresh; badge di tab Pesan & avatar header muncul, hilang
+      setelah dibuka.
 - [ ] Klik "Bayar" / cek ongkir berkali-kali dengan cepat → akhirnya muncul pesan rate limit
       (bukan error 500).
 

@@ -1,14 +1,16 @@
 "use client";
 
-import { MapPinIcon, PackageIcon, UserIcon } from "lucide-react";
+import { MapPinIcon, MessagesSquareIcon, PackageIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 
+import { UnreadBadge } from "@/features/chat/components/unread-badge";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { href: "/account/orders", label: "Pesanan", icon: PackageIcon },
+  { href: "/account/messages", label: "Pesan", icon: MessagesSquareIcon, badge: true },
   { href: "/account", label: "Profil", icon: UserIcon },
   { href: "/account/addresses", label: "Alamat", icon: MapPinIcon },
 ] as const;
@@ -49,6 +51,7 @@ function NavLinks({ pathname }: { pathname: string | null }) {
           >
             <item.icon className="size-4" aria-hidden="true" />
             {item.label}
+            {"badge" in item && <UnreadBadge live />}
           </Link>
         );
       })}

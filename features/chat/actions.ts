@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { assertAdminAction } from "@/features/admin/guard";
@@ -17,6 +18,7 @@ import {
   type ChatMessage,
   type ConversationStatus,
   sendSchema,
+  startSchema,
   toChatMessage,
 } from "./schemas";
 
@@ -96,4 +98,53 @@ export async function setConversationStatus(
     status: "success",
     message: status === "closed" ? "Percakapan ditandai selesai." : "Percakapan dibuka kembali.",
   };
+}
+
+/** Pembeli: mulai chat umum (topik + pesan pertama), lalu buka percakapannya. */
+export async function startConversation(input: {
+  subject: string;
+  body: string;
+}): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (!user) return { status: "error", message: SESSION_EXPIRED };
+  const parsed = startSchema.safeParse(input);
+  if (!parsed.success) {
+    return { status: "error", message: parsed.error.issues[0]?.message ?? "Data tidak valid." };
+  }
+  if (!(await rateLimit("chatStart", user.id))) {
+    return { status: "error", message: RATE_LIMITED_MESSAGE };
+  }
+
+  const supabase = await createClient();
+  const { data: conversation, error } = await supabase.rpc("start_conversation", {
+    p_subject: parsed.data.subject,
+  });
+  if (error) return { status: "error", message: dbErrorMessage(error) };
+  const { error: sendError } = await supabase.rpc("send_message", {
+    p_conversation_id: conversation.id,
+    p_body: parsed.data.body,
+  });
+  if (sendError) return { status: "error", message: dbErrorMessage(sendError) };
+
+  redirect(`/account/messages/${conversation.id}`);
+}
+
+/** Pembeli: buka (atau buat) chat untuk pesanan miliknya. */
+export async function openOrderConversation(orderId: string): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (!user) return { status: "error", message: SESSION_EXPIRED };
+  if (!uuid.safeParse(orderId).success) {
+    return { status: "error", message: "Pesanan tidak ditemukan." };
+  }
+  if (!(await rateLimit("chatStart", user.id))) {
+    return { status: "error", message: RATE_LIMITED_MESSAGE };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("start_conversation", {
+    p_subject: "",
+    p_order_id: orderId,
+  });
+  if (error) return { status: "error", message: dbErrorMessage(error) };
+  redirect(`/account/messages/${data.id}`);
 }

@@ -7,9 +7,11 @@ import { cn } from "@/lib/utils";
 
 /**
  * Jumlah percakapan belum dibaca (admin: butuh balasan; pembeli: balasan baru).
- * Diperbarui lewat Realtime saat ringkasan percakapan berubah. Tidak tampil bila 0.
+ * `live` = berlangganan Realtime (area akun/admin). Tanpa `live` (mis. header di
+ * semua halaman) cukup dimuat saat tampil & saat tab kembali aktif agar tidak
+ * membuka koneksi websocket untuk setiap pengunjung. Tidak tampil bila 0.
  */
-export function UnreadBadge({ className }: { className?: string }) {
+export function UnreadBadge({ className, live = false }: { className?: string; live?: boolean }) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -23,15 +25,25 @@ export function UnreadBadge({ className }: { className?: string }) {
       }, 300);
     };
     load();
-    const channel = supabase
-      .channel(`chat:unread:${crypto.randomUUID()}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, load)
-      .subscribe();
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    const channel = live
+      ? supabase
+          .channel(`chat:unread:${crypto.randomUUID()}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, load)
+          .subscribe()
+      : null;
+
     return () => {
       clearTimeout(timer);
-      void supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onVisible);
+      if (channel) void supabase.removeChannel(channel);
     };
-  }, []);
+  }, [live]);
 
   if (count === 0) return null;
   return (

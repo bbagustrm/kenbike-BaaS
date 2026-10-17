@@ -149,3 +149,46 @@ export async function listInbox(
     next: data.length > INBOX_PAGE_SIZE && last ? { at: last.last_message_at, id: last.id } : null,
   };
 }
+
+export type MyConversation = {
+  id: string;
+  subject: string;
+  status: ConversationStatus;
+  orderNumber: string | null;
+  lastMessageAt: string;
+  preview: string;
+  lastSender: MessageSender | null;
+  unread: boolean;
+};
+
+/** Percakapan milik pembeli yang login (RLS), terbaru dulu. */
+export async function listMyConversations(): Promise<MyConversation[]> {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const uid = claims?.claims.sub;
+  if (!uid) return [];
+  const { data, error } = await supabase
+    .from("conversations")
+    .select(
+      `id, subject, status, last_message_at, last_message_preview, last_sender,
+       customer_last_read_at, order:orders (order_number)`,
+    )
+    .eq("customer_id", uid)
+    .not("last_sender", "is", null)
+    .order("last_message_at", { ascending: false })
+    .limit(100);
+  if (error) throw new Error(`listMyConversations: ${error.message}`);
+  return data.map((c) => ({
+    id: c.id,
+    subject: c.subject,
+    status: c.status,
+    orderNumber: c.order?.order_number ?? null,
+    lastMessageAt: c.last_message_at,
+    preview: c.last_message_preview,
+    lastSender: c.last_sender,
+    unread:
+      (c.last_sender === "admin" || c.last_sender === "system") &&
+      (!c.customer_last_read_at ||
+        Date.parse(c.last_message_at) > Date.parse(c.customer_last_read_at)),
+  }));
+}

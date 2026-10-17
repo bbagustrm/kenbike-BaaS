@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PaymentPanel, SnapScript } from "@/features/checkout";
+import { OrderChatButton } from "@/features/chat";
 import { canDownloadInvoice, InvoiceButton } from "@/features/documents";
 import { CancelOrderDialog, isCancellable, RefundPanel } from "@/features/refunds";
 import { customerCancelOrder } from "@/features/refunds/actions";
@@ -75,6 +76,7 @@ async function OrderDetail({ orderNumber }: { orderNumber: string }) {
           {canDownloadInvoice(order.paymentStatus) && (
             <InvoiceButton orderNumber={order.orderNumber} />
           )}
+          <OrderChatButton orderId={order.id} />
           {finished && <BuyAgainButton orderNumber={order.orderNumber} />}
           {isCancellable(order.paymentStatus, order.shippingStatus) && (
             <CancelOrderDialog
