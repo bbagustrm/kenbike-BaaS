@@ -442,6 +442,7 @@ export type Database = {
           paid_at: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           profile_id: string
+          review_prompt_dismissed_at: string | null
           shipping_address_snapshot: Json
           shipping_cost: number
           shipping_status: Database["public"]["Enums"]["shipping_status"] | null
@@ -463,6 +464,7 @@ export type Database = {
           paid_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           profile_id: string
+          review_prompt_dismissed_at?: string | null
           shipping_address_snapshot: Json
           shipping_cost?: number
           shipping_status?:
@@ -486,6 +488,7 @@ export type Database = {
           paid_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           profile_id?: string
+          review_prompt_dismissed_at?: string | null
           shipping_address_snapshot?: Json
           shipping_cost?: number
           shipping_status?:
@@ -781,6 +784,8 @@ export type Database = {
           is_preorder: boolean
           name: string
           preorder_days: number | null
+          rating_avg: number
+          rating_count: number
           slug: string
           updated_at: string
         }
@@ -793,6 +798,8 @@ export type Database = {
           is_preorder?: boolean
           name: string
           preorder_days?: number | null
+          rating_avg?: number
+          rating_count?: number
           slug: string
           updated_at?: string
         }
@@ -805,6 +812,8 @@ export type Database = {
           is_preorder?: boolean
           name?: string
           preorder_days?: number | null
+          rating_avg?: number
+          rating_count?: number
           slug?: string
           updated_at?: string
         }
@@ -921,6 +930,155 @@ export type Database = {
           {
             foreignKeyName: "refunds_processed_by_fkey"
             columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_photos: {
+        Row: {
+          created_at: string
+          id: string
+          review_id: string
+          sort_order: number
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          review_id: string
+          sort_order?: number
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          review_id?: string
+          sort_order?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_photos_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_products: {
+        Row: {
+          product_id: string
+          review_id: string
+          variant_label: string | null
+        }
+        Insert: {
+          product_id: string
+          review_id: string
+          variant_label?: string | null
+        }
+        Update: {
+          product_id?: string
+          review_id?: string
+          variant_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_products_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          admin_reply: string | null
+          admin_reply_at: string | null
+          admin_reply_by: string | null
+          body: string
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          id: string
+          order_id: string | null
+          profile_id: string | null
+          rating: number
+          reviewer_name: string
+          source: Database["public"]["Enums"]["review_source"]
+        }
+        Insert: {
+          admin_reply?: string | null
+          admin_reply_at?: string | null
+          admin_reply_by?: string | null
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          order_id?: string | null
+          profile_id?: string | null
+          rating: number
+          reviewer_name: string
+          source?: Database["public"]["Enums"]["review_source"]
+        }
+        Update: {
+          admin_reply?: string | null
+          admin_reply_at?: string | null
+          admin_reply_by?: string | null
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          order_id?: string | null
+          profile_id?: string | null
+          rating?: number
+          reviewer_name?: string
+          source?: Database["public"]["Enums"]["review_source"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_admin_reply_by_fkey"
+            columns: ["admin_reply_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1149,6 +1307,8 @@ export type Database = {
           preorder_days: number | null
           price_max: number | null
           price_min: number | null
+          rating_avg: number | null
+          rating_count: number | null
           slug: string | null
         }
         Relationships: [
@@ -1184,6 +1344,7 @@ export type Database = {
         Args: { p_days?: number; p_low_stock?: number }
         Returns: Json
       }
+      admin_delete_review: { Args: { p_review_id: string }; Returns: undefined }
       admin_get_stock: {
         Args: { variant_ids: string[] }
         Returns: {
@@ -1192,6 +1353,18 @@ export type Database = {
           reserved: number
           variant_id: string
         }[]
+      }
+      admin_import_review: {
+        Args: {
+          p_body?: string
+          p_created_at?: string
+          p_photo_paths?: string[]
+          p_product_id: string
+          p_rating: number
+          p_reviewer_name: string
+          p_variant_label?: string
+        }
+        Returns: string
       }
       admin_list_conversations: {
         Args: {
@@ -1237,6 +1410,10 @@ export type Database = {
           total_count: number
         }[]
       }
+      admin_reply_review: {
+        Args: { p_reply: string; p_review_id: string }
+        Returns: undefined
+      }
       admin_set_role: {
         Args: {
           p_role: Database["public"]["Enums"]["user_role"]
@@ -1264,6 +1441,7 @@ export type Database = {
           paid_at: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           profile_id: string
+          review_prompt_dismissed_at: string | null
           shipping_address_snapshot: Json
           shipping_cost: number
           shipping_status: Database["public"]["Enums"]["shipping_status"] | null
@@ -1294,6 +1472,7 @@ export type Database = {
           paid_at: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           profile_id: string
+          review_prompt_dismissed_at: string | null
           shipping_address_snapshot: Json
           shipping_cost: number
           shipping_status: Database["public"]["Enums"]["shipping_status"] | null
@@ -1355,6 +1534,7 @@ export type Database = {
           paid_at: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           profile_id: string
+          review_prompt_dismissed_at: string | null
           shipping_address_snapshot: Json
           shipping_cost: number
           shipping_status: Database["public"]["Enums"]["shipping_status"] | null
@@ -1392,6 +1572,7 @@ export type Database = {
           paid_at: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           profile_id: string
+          review_prompt_dismissed_at: string | null
           shipping_address_snapshot: Json
           shipping_cost: number
           shipping_status: Database["public"]["Enums"]["shipping_status"] | null
@@ -1406,6 +1587,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      dismiss_review_prompt: {
+        Args: { p_order_id: string }
+        Returns: undefined
+      }
       expire_pending_orders: { Args: never; Returns: number }
       get_or_create_cart: { Args: never; Returns: string }
       get_variant_availability: {
@@ -1415,11 +1600,50 @@ export type Database = {
           variant_id: string
         }[]
       }
+      list_product_reviews: {
+        Args: {
+          p_before_at?: string
+          p_before_id?: string
+          p_limit?: number
+          p_product_id: string
+          p_rating?: number
+        }
+        Returns: {
+          admin_reply: string
+          admin_reply_at: string
+          body: string
+          created_at: string
+          id: string
+          photos: string[]
+          rating: number
+          reviewer_name: string
+          variant_label: string
+        }[]
+      }
       mark_conversation_read: {
         Args: { p_conversation_id: string }
         Returns: undefined
       }
       merge_guest_cart: { Args: { items: Json }; Returns: string }
+      my_order_review: {
+        Args: { p_order_id: string }
+        Returns: {
+          admin_reply: string
+          body: string
+          created_at: string
+          photos: string[]
+          rating: number
+        }[]
+      }
+      pending_review_orders: {
+        Args: { p_prompt_only?: boolean }
+        Returns: {
+          delivered_at: string
+          items: Json
+          order_id: string
+          order_number: string
+        }[]
+      }
       post_system_message: {
         Args: { p_body: string; p_order_id: string }
         Returns: {
@@ -1437,6 +1661,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      product_rating_summary: {
+        Args: { p_product_id: string }
+        Returns: {
+          distribution: Json
+          rating_avg: number
+          rating_count: number
+        }[]
       }
       public_store_info: {
         Args: never
@@ -1554,6 +1786,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      submit_order_review: {
+        Args: {
+          p_body?: string
+          p_order_id: string
+          p_photo_paths?: string[]
+          p_rating: number
+        }
+        Returns: string
+      }
       unread_conversation_count: { Args: never; Returns: number }
     }
     Enums: {
@@ -1583,6 +1824,7 @@ export type Database = {
         | "refunded"
       refund_status: "awaiting_account" | "pending_transfer" | "completed"
       reservation_status: "reserved" | "confirmed" | "released"
+      review_source: "customer" | "imported"
       shipping_status:
         | "pending"
         | "processing"
@@ -1747,6 +1989,7 @@ export const Constants = {
       ],
       refund_status: ["awaiting_account", "pending_transfer", "completed"],
       reservation_status: ["reserved", "confirmed", "released"],
+      review_source: ["customer", "imported"],
       shipping_status: [
         "pending",
         "processing",
