@@ -107,9 +107,14 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
 - [ ] Produk: buat produk baru (dengan varian & gambar) → kembali ke `/admin/products`; edit, nonaktifkan.
 - [ ] Kategori: tambah, ubah, hapus (kategori yang dipakai produk ditolak).
 - [ ] Pesanan: filter status & pencarian nomor pesanan/nama; tambahkan **catatan internal**.
-- [ ] **Batalkan pengiriman** pada pesanan yang belum di-pickup → status pengiriman Dibatalkan.
-- [ ] Pesanan dibatalkan setelah dibayar → **Tandai sudah refund** (setelah refund di dashboard
-      Midtrans sandbox).
+- [ ] Pesanan lunas yang belum diambil kurir → **Batalkan & refund** (pilih alasan; coba sekali
+      dengan "Kembalikan stok" dimatikan) → status **Menunggu refund**, order Biteship ikut batal,
+      stok kembali (atau tetap bila dimatikan), panel **Refund** muncul.
+- [ ] Panel Refund → **Isi data rekening** (nomor dengan spasi/strip diterima) → **Selesaikan refund**
+      dengan unggah bukti (gambar/PDF) → status **Dana dikembalikan**, link bukti terbuka.
+- [ ] Selesaikan refund tanpa bukti & tanpa catatan → ditolak; hanya catatan (refund via Midtrans) → diterima.
+- [ ] Dashboard: kartu **Menunggu refund** menghitung pesanan tadi; filter **Menunggu refund** di daftar pesanan.
+- [ ] Pesanan yang sudah dikirim: tombol **Batalkan & refund** tidak muncul.
 - [ ] **Selesaikan** tanda "Perlu tindakan".
 - [ ] Pengguna: daftar & pencarian tampil.
 - [ ] Detail pesanan dibayar → **Unduh invoice** (PDF A4, cap LUNAS, SKU tampil) dan **Unduh resi**

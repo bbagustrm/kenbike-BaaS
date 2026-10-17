@@ -1,4 +1,4 @@
-import { AlertTriangleIcon, ClockIcon, PackageIcon, TruckIcon } from "lucide-react";
+import { AlertTriangleIcon, ClockIcon, PackageIcon, TruckIcon, Undo2Icon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -24,6 +24,13 @@ export default async function AdminHomePage() {
       label: "Perlu tindakan",
       value: d.attention,
       urgent: d.attention > 0,
+    },
+    {
+      href: "/admin/orders?status=refund",
+      icon: Undo2Icon,
+      label: "Menunggu refund",
+      value: d.refundPending,
+      urgent: d.refundPending > 0,
     },
     {
       href: "/admin/orders?status=processing",
@@ -86,7 +93,7 @@ export default async function AdminHomePage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {queues.map((q) => (
           <Link
             key={q.href}

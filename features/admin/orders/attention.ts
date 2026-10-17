@@ -7,7 +7,7 @@ export const ATTENTION: Record<AttentionReason, { label: string; guide: string }
   late_payment_out_of_stock: {
     label: "Bayar telat, stok habis",
     guide:
-      "Pembayaran masuk setelah pesanan kedaluwarsa dan stok sudah tidak cukup. Tambah stok lalu klik “Selesaikan” dan “Buat pengiriman”, atau refund manual di dashboard Midtrans lalu klik “Tandai sudah refund”.",
+      "Pembayaran masuk setelah pesanan kedaluwarsa dan stok sudah tidak cukup. Tambah stok lalu klik “Selesaikan” dan “Buat pengiriman”, atau klik “Batalkan & refund” lalu proses refund ke pembeli.",
   },
   shipment_create_failed: {
     label: "Gagal membuat pengiriman",
@@ -17,7 +17,7 @@ export const ATTENTION: Record<AttentionReason, { label: string; guide: string }
   amount_mismatch: {
     label: "Nominal tidak cocok",
     guide:
-      "Nominal dari Midtrans berbeda dengan tagihan. Cek transaksinya di dashboard Midtrans: refund lalu “Tandai sudah refund”, atau “Selesaikan” bila sudah benar.",
+      "Nominal dari Midtrans berbeda dengan tagihan. Cek transaksinya di dashboard Midtrans: bila salah, klik “Batalkan & refund”; bila sudah benar, klik “Selesaikan”.",
   },
   duplicate_payment: {
     label: "Pembayaran dobel",
