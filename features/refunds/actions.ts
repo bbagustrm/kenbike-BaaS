@@ -1,9 +1,11 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 
 import { assertAdminAction } from "@/features/admin/guard";
+import { notifyOrderCancelled, notifyRefundCompleted } from "@/features/notifications/notify";
 import type { ActionState } from "@/lib/action-state";
 import { getCurrentUser } from "@/lib/auth/session";
 import { dbErrorMessage } from "@/lib/db-errors";
@@ -41,6 +43,7 @@ export async function adminCancelOrder(
   if (!parsed.success) return firstIssue(parsed.error);
 
   const result = await cancelPaidOrder({ orderId, ...parsed.data, actor: "admin" });
+  if (result.status === "success") after(() => notifyOrderCancelled(orderId, true));
   if (result.status === "success" && result.amount !== undefined) {
     await postRefundMessage(
       orderId,
@@ -93,6 +96,7 @@ export async function customerCancelOrder(
       }),
     );
   }
+  after(() => notifyOrderCancelled(orderId, false));
   refresh();
   if (error) {
     return {
@@ -179,6 +183,7 @@ export async function completeRefund(
     }),
   );
 
+  after(() => notifyRefundCompleted(orderId));
   refresh();
   return { status: "success", message: "Refund ditandai selesai." };
 }

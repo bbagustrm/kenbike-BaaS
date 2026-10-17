@@ -188,9 +188,11 @@ export type Database = {
       conversations: {
         Row: {
           admin_last_read_at: string | null
+          admin_notified_at: string | null
           created_at: string
           customer_id: string
           customer_last_read_at: string | null
+          customer_notified_at: string | null
           id: string
           last_message_at: string
           last_message_preview: string
@@ -202,9 +204,11 @@ export type Database = {
         }
         Insert: {
           admin_last_read_at?: string | null
+          admin_notified_at?: string | null
           created_at?: string
           customer_id: string
           customer_last_read_at?: string | null
+          customer_notified_at?: string | null
           id?: string
           last_message_at?: string
           last_message_preview?: string
@@ -216,9 +220,11 @@ export type Database = {
         }
         Update: {
           admin_last_read_at?: string | null
+          admin_notified_at?: string | null
           created_at?: string
           customer_id?: string
           customer_last_read_at?: string | null
+          customer_notified_at?: string | null
           id?: string
           last_message_at?: string
           last_message_preview?: string
@@ -1598,6 +1604,10 @@ export type Database = {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: boolean
       }
+      claim_chat_email: {
+        Args: { p_conversation_id: string; p_recipient: string }
+        Returns: boolean
+      }
       complete_refund: {
         Args: { p_note: string; p_order_id: string; p_proof_path: string }
         Returns: {
@@ -1840,9 +1850,11 @@ export type Database = {
         }
         Returns: {
           admin_last_read_at: string | null
+          admin_notified_at: string | null
           created_at: string
           customer_id: string
           customer_last_read_at: string | null
+          customer_notified_at: string | null
           id: string
           last_message_at: string
           last_message_preview: string
@@ -1895,9 +1907,11 @@ export type Database = {
         Args: { p_order_id?: string; p_subject: string }
         Returns: {
           admin_last_read_at: string | null
+          admin_notified_at: string | null
           created_at: string
           customer_id: string
           customer_last_read_at: string | null
+          customer_notified_at: string | null
           id: string
           last_message_at: string
           last_message_preview: string

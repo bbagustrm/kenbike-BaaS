@@ -56,6 +56,16 @@ masing-masing layanan. Centang berurutan.
       `order.waybill_id`, Headers Signature Key `x-kenbike-webhook-secret`, Secret = nilai acak
       baru → `BITESHIP_WEBHOOK_SECRET`.
 
+## 5b. Email notifikasi — Resend (#102, #40)
+
+- [ ] Resend → **Domains** → tambah domain toko, pasang record DNS (SPF/DKIM) sampai **Verified**.
+- [ ] Env Production: `RESEND_API_KEY` (key produksi, bukan key dev), `MAIL_FROM="KenBike <halo@domaintoko.id>"`,
+      **`MAIL_DEV_TO` dikosongkan** (bila terisi, semua email pembeli dialihkan ke satu inbox).
+- [ ] Opsional `ADMIN_NOTIFY_EMAIL` untuk pesan pembeli baru (selain Discord).
+- [ ] Supabase → Authentication → SMTP Settings: host `smtp.resend.com`, port `465`, user `resend`,
+      password = API key Resend, sender = alamat `MAIL_FROM` (email login/daftar/reset password).
+- [ ] Uji: `bun run email:test` (dengan env produksi di mesin lokal) atau kirim balasan chat ke akun uji.
+
 ## 6. Monitoring (#76)
 
 - [ ] Opsional: `OPS_DISCORD_WEBHOOK_URL` (Discord → Channel → Integrations → Webhooks) untuk

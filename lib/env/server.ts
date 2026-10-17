@@ -52,3 +52,23 @@ export const biteshipWebhookEnv = lazyEnv(
   "Biteship webhook",
   z.object({ BITESHIP_WEBHOOK_SECRET: z.string().min(1) }),
 );
+
+/**
+ * Email transaksional (Resend). Opsional: tanpa RESEND_API_KEY email dilewati
+ * (hanya dicatat di log). MAIL_DEV_TO = alihkan SEMUA email ke satu inbox
+ * (dipakai di localhost/preview — Resend tanpa domain terverifikasi hanya bisa
+ * mengirim ke email pemilik akun).
+ */
+export const emailEnv = lazyEnv(
+  "Email (Resend)",
+  z.object({
+    RESEND_API_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(1).optional()),
+    MAIL_FROM: z.preprocess(
+      (v) => (v === "" ? undefined : v),
+      z.string().min(3).default("KenBike <onboarding@resend.dev>"),
+    ),
+    MAIL_DEV_TO: z.preprocess((v) => (v === "" ? undefined : v), z.email().optional()),
+    /** Email admin untuk notifikasi pesan/pertanyaan baru (opsional). */
+    ADMIN_NOTIFY_EMAIL: z.preprocess((v) => (v === "" ? undefined : v), z.email().optional()),
+  }),
+);
