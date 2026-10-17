@@ -140,6 +140,11 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
 - [ ] Pesanan yang sudah dikirim: tombol **Batalkan & refund** tidak muncul.
 - [ ] **Selesaikan** tanda "Perlu tindakan".
 - [ ] Pengguna: daftar & pencarian tampil.
+- [ ] **Ulasan** (admin): **Tambah ulasan** (produk, nama, tanggal lampau, varian, bintang, teks,
+      foto) → muncul di daftar (badge Impor) & di halaman produk dengan tanggal aslinya, rating
+      produk berubah. **Balas** → tampil di halaman produk dengan badge Admin; ubah/kosongkan
+      balasan. **Hapus** → hilang dari halaman produk, rating dihitung ulang. Filter belum dibalas,
+      bintang, sumber, produk, dan pencarian berfungsi.
 - [ ] **Pesan** (chat): menu sidebar menampilkan badge jumlah percakapan yang butuh balasan.
       Buka percakapan → pesan tampil, badge berkurang. Balas teks + lampiran (gambar & PDF) →
       pembeli menerimanya **tanpa refresh** (buka akun pembeli di browser lain). Pesan pembeli
