@@ -71,9 +71,10 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
       simulator → status berubah menjadi diterima (via webhook, atau setelah membuka halaman pesanan).
 - [ ] **Kartu ditolak** → pesanan tetap menunggu pembayaran, bisa dicoba ulang.
 - [ ] **Batalkan** pesanan yang masih menunggu pembayaran → status Dibatalkan, stok kembali.
-- [ ] Pesanan **lunas** yang belum diambil kurir → **Batalkan pesanan** (pilih alasan) → status
-      **Menunggu refund**, order Biteship ikut batal, stok kembali, panel **Refund** muncul →
-      **Isi data rekening** → admin menyelesaikan refund → pembeli melihat **Refund selesai** + bukti.
+- [ ] Pesanan **lunas** yang belum diambil kurir → **Batalkan pesanan**: pilih alasan **dan isi
+      rekening tujuan** (wajib) → status **Menunggu refund**, order Biteship ikut batal, stok kembali,
+      panel **Refund** menampilkan rekening (bisa diubah) → admin menyelesaikan refund → pembeli
+      melihat **Refund selesai** + bukti.
 - [ ] Setelah kurir mengambil paket (webhook `picked`), tombol **Batalkan pesanan** hilang.
 - [ ] Klik "Bayar" / cek ongkir berkali-kali dengan cepat → akhirnya muncul pesan rate limit
       (bukan error 500).
@@ -116,7 +117,9 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
       stok kembali (atau tetap bila dimatikan), panel **Refund** muncul.
 - [ ] Panel Refund → **Isi data rekening** (nomor dengan spasi/strip diterima) → **Selesaikan refund**
       dengan unggah bukti (gambar/PDF) → status **Dana dikembalikan**, link bukti terbuka.
-- [ ] Selesaikan refund tanpa bukti & tanpa catatan → ditolak; hanya catatan (refund via Midtrans) → diterima.
+- [ ] Pesanan yang dibatalkan admin & rekening belum diisi → tombol **Selesaikan refund** nonaktif;
+      admin bisa **Isi data rekening** sendiri (dari chat). Tanpa bukti & tanpa catatan → ditolak;
+      hanya catatan → diterima.
 - [ ] Dashboard: kartu **Menunggu refund** menghitung pesanan tadi; filter **Menunggu refund** di daftar pesanan.
 - [ ] Pesanan yang sudah dikirim: tombol **Batalkan & refund** tidak muncul.
 - [ ] **Selesaikan** tanda "Perlu tindakan".

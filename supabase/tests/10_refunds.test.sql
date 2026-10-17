@@ -168,8 +168,13 @@ select pg_temp.lives('admin menyelesaikan refund dengan bukti',
   format($$ select public.complete_refund(%L, %L, 'Transfer BCA') $$, pg_temp.ctx('o1'), pg_temp.ctx('o1') || '/bukti.png'));
 select pg_temp.throws('refund selesai tidak bisa diselesaikan lagi',
   format($$ select public.complete_refund(%L, null, 'lagi') $$, pg_temp.ctx('o1')), 'P0002');
-select pg_temp.lives('refund via dashboard Midtrans tanpa rekening (catatan saja)',
-  format($$ select public.complete_refund(%L, null, 'Refund via Midtrans') $$, pg_temp.ctx('o2')));
+select pg_temp.throws('refund tanpa rekening tidak bisa diselesaikan',
+  format($$ select public.complete_refund(%L, null, 'Sudah transfer') $$, pg_temp.ctx('o2')), 'P0001',
+  'refund_account_missing');
+select pg_temp.lives('admin mengisi rekening dari chat lalu menyelesaikan dengan catatan',
+  format($$ select public.set_refund_account(%L, 'Mandiri', '1230009876', 'Budi'),
+                   public.complete_refund(%L, null, 'Transfer Mandiri 17 Okt') $$,
+         pg_temp.ctx('o2'), pg_temp.ctx('o2')));
 reset role;
 select pg_temp.eq('selesai: order refunded', (pg_temp.order_of('o1')).payment_status::text, 'refunded');
 select pg_temp.eq('selesai: refund completed', (pg_temp.refund_of('o1')).status::text, 'completed');

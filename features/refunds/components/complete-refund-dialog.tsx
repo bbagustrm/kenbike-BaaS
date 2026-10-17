@@ -76,7 +76,15 @@ export function CompleteRefundDialog({
         if (!pending) setOpen(next);
       }}
     >
-      <DialogTrigger render={<Button size="sm" />}>
+      <DialogTrigger
+        render={
+          <Button
+            size="sm"
+            disabled={!hasAccount}
+            title={hasAccount ? undefined : "Rekening tujuan belum diisi"}
+          />
+        }
+      >
         <CheckCircle2Icon />
         Selesaikan refund
       </DialogTrigger>
@@ -92,9 +100,8 @@ export function CompleteRefundDialog({
           <DialogHeader>
             <DialogTitle>Selesaikan refund</DialogTitle>
             <DialogDescription>
-              {hasAccount
-                ? "Transfer dana ke rekening pembeli, lalu unggah bukti transfernya."
-                : "Rekening pembeli belum diisi. Bila refund dilakukan lewat dashboard Midtrans, cukup tulis catatan."}
+              Transfer dana ke rekening pembeli di luar sistem, lalu unggah bukti transfernya (atau
+              tulis catatan).
             </DialogDescription>
           </DialogHeader>
           <FieldGroup className="gap-3">
