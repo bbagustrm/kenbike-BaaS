@@ -71,6 +71,10 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
       simulator → status berubah menjadi diterima (via webhook, atau setelah membuka halaman pesanan).
 - [ ] **Kartu ditolak** → pesanan tetap menunggu pembayaran, bisa dicoba ulang.
 - [ ] **Batalkan** pesanan yang masih menunggu pembayaran → status Dibatalkan, stok kembali.
+- [ ] Pesanan **lunas** yang belum diambil kurir → **Batalkan pesanan** (pilih alasan) → status
+      **Menunggu refund**, order Biteship ikut batal, stok kembali, panel **Refund** muncul →
+      **Isi data rekening** → admin menyelesaikan refund → pembeli melihat **Refund selesai** + bukti.
+- [ ] Setelah kurir mengambil paket (webhook `picked`), tombol **Batalkan pesanan** hilang.
 - [ ] Klik "Bayar" / cek ongkir berkali-kali dengan cepat → akhirnya muncul pesan rate limit
       (bukan error 500).
 

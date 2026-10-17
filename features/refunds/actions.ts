@@ -7,6 +7,7 @@ import { assertAdminAction } from "@/features/admin/guard";
 import type { ActionState } from "@/lib/action-state";
 import { getCurrentUser } from "@/lib/auth/session";
 import { dbErrorMessage } from "@/lib/db-errors";
+import { RATE_LIMITED_MESSAGE, rateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 import { cancelPaidOrder } from "./cancel";
@@ -41,15 +42,41 @@ export async function adminCancelOrder(
   return result;
 }
 
+/** Pembeli: batalkan pesanan lunas miliknya (stok selalu dikembalikan). */
+export async function customerCancelOrder(
+  orderId: string,
+  input: { reason: string },
+): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (!user) return { status: "error", message: "Sesi kamu sudah habis. Silakan masuk lagi." };
+  if (!uuid.safeParse(orderId).success) return INVALID;
+  const parsed = cancelSchema.safeParse({ reason: input.reason, restock: true });
+  if (!parsed.success) return firstIssue(parsed.error);
+  if (!(await rateLimit("cancelOrder", user.id))) {
+    return { status: "error", message: RATE_LIMITED_MESSAGE };
+  }
+
+  const result = await cancelPaidOrder({ orderId, ...parsed.data, actor: "customer" });
+  refresh();
+  return result.status === "success"
+    ? {
+        status: "success",
+        message: "Pesanan dibatalkan. Isi data rekening agar dana bisa kami kembalikan.",
+      }
+    : result;
+}
+
 /** Simpan rekening tujuan refund (admin, atau pembeli pemilik order — dicek RPC). */
 export async function saveRefundAccount(
   orderId: string,
   input: { bankName: string; accountNumber: string; accountHolder: string },
 ): Promise<ActionState> {
-  if (!(await getCurrentUser())) {
-    return { status: "error", message: "Sesi kamu sudah habis. Silakan masuk lagi." };
-  }
+  const user = await getCurrentUser();
+  if (!user) return { status: "error", message: "Sesi kamu sudah habis. Silakan masuk lagi." };
   if (!uuid.safeParse(orderId).success) return INVALID;
+  if (user.role !== "admin" && !(await rateLimit("refundAccount", user.id))) {
+    return { status: "error", message: RATE_LIMITED_MESSAGE };
+  }
   const parsed = accountSchema.safeParse(input);
   if (!parsed.success) return firstIssue(parsed.error);
 

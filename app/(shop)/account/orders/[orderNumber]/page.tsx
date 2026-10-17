@@ -11,10 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PaymentPanel, SnapScript } from "@/features/checkout";
 import { canDownloadInvoice, InvoiceButton } from "@/features/documents";
+import { CancelOrderDialog, isCancellable, RefundPanel } from "@/features/refunds";
+import { customerCancelOrder } from "@/features/refunds/actions";
+import { getRefund } from "@/features/refunds/queries";
 import { BuyAgainButton, OrderTimeline, orderDisplayStatus, StatusBadge } from "@/features/orders";
 import { getMyOrder } from "@/features/orders/queries";
 import { requireUser } from "@/lib/auth/session";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatRupiah } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Detail pesanan", robots: { index: false } };
 
@@ -44,6 +47,7 @@ async function OrderDetail({ orderNumber }: { orderNumber: string }) {
   await requireUser(`/account/orders/${encodeURIComponent(orderNumber)}`);
   const order = await getMyOrder(orderNumber);
   if (!order) notFound();
+  const refund = order.paymentStatus === "paid" ? null : await getRefund(order.id);
 
   const status = orderDisplayStatus(order.paymentStatus, order.shippingStatus);
   const pending = order.paymentStatus === "pending_payment";
@@ -72,6 +76,13 @@ async function OrderDetail({ orderNumber }: { orderNumber: string }) {
             <InvoiceButton orderNumber={order.orderNumber} />
           )}
           {finished && <BuyAgainButton orderNumber={order.orderNumber} />}
+          {isCancellable(order.paymentStatus, order.shippingStatus) && (
+            <CancelOrderDialog
+              orderId={order.id}
+              total={formatRupiah(order.total)}
+              action={customerCancelOrder}
+            />
+          )}
         </div>
       </div>
 
@@ -163,6 +174,8 @@ async function OrderDetail({ orderNumber }: { orderNumber: string }) {
         </div>
 
         <div className="space-y-6">
+          {refund && <RefundPanel orderId={order.id} refund={refund} />}
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
