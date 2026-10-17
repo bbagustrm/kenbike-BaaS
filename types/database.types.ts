@@ -185,6 +185,111 @@ export type Database = {
           },
         ]
       }
+      conversations: {
+        Row: {
+          admin_last_read_at: string | null
+          created_at: string
+          customer_id: string
+          customer_last_read_at: string | null
+          id: string
+          last_message_at: string
+          last_message_preview: string
+          last_sender: Database["public"]["Enums"]["message_sender"] | null
+          order_id: string | null
+          status: Database["public"]["Enums"]["conversation_status"]
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          admin_last_read_at?: string | null
+          created_at?: string
+          customer_id: string
+          customer_last_read_at?: string | null
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string
+          last_sender?: Database["public"]["Enums"]["message_sender"] | null
+          order_id?: string | null
+          status?: Database["public"]["Enums"]["conversation_status"]
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          admin_last_read_at?: string | null
+          created_at?: string
+          customer_id?: string
+          customer_last_read_at?: string | null
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string
+          last_sender?: Database["public"]["Enums"]["message_sender"] | null
+          order_id?: string | null
+          status?: Database["public"]["Enums"]["conversation_status"]
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          attachments: Json
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string | null
+          sender_role: Database["public"]["Enums"]["message_sender"]
+        }
+        Insert: {
+          attachments?: Json
+          body?: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_id?: string | null
+          sender_role: Database["public"]["Enums"]["message_sender"]
+        }
+        Update: {
+          attachments?: Json
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string | null
+          sender_role?: Database["public"]["Enums"]["message_sender"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_internal_notes: {
         Row: {
           admin_id: string
@@ -1285,7 +1390,29 @@ export type Database = {
           variant_id: string
         }[]
       }
+      mark_conversation_read: {
+        Args: { p_conversation_id: string }
+        Returns: undefined
+      }
       merge_guest_cart: { Args: { items: Json }; Returns: string }
+      post_system_message: {
+        Args: { p_body: string; p_order_id: string }
+        Returns: {
+          attachments: Json
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string | null
+          sender_role: Database["public"]["Enums"]["message_sender"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "messages"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       public_store_info: {
         Args: never
         Returns: {
@@ -1299,6 +1426,54 @@ export type Database = {
         }[]
       }
       release_reservations: { Args: { p_order_id: string }; Returns: number }
+      send_message: {
+        Args: {
+          p_attachments?: Json
+          p_body: string
+          p_conversation_id: string
+        }
+        Returns: {
+          attachments: Json
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string | null
+          sender_role: Database["public"]["Enums"]["message_sender"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "messages"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      set_conversation_status: {
+        Args: {
+          p_conversation_id: string
+          p_status: Database["public"]["Enums"]["conversation_status"]
+        }
+        Returns: {
+          admin_last_read_at: string | null
+          created_at: string
+          customer_id: string
+          customer_last_read_at: string | null
+          id: string
+          last_message_at: string
+          last_message_preview: string
+          last_sender: Database["public"]["Enums"]["message_sender"] | null
+          order_id: string | null
+          status: Database["public"]["Enums"]["conversation_status"]
+          subject: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "conversations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_refund_account: {
         Args: {
           p_account_holder: string
@@ -1331,6 +1506,30 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      start_conversation: {
+        Args: { p_order_id?: string; p_subject: string }
+        Returns: {
+          admin_last_read_at: string | null
+          created_at: string
+          customer_id: string
+          customer_last_read_at: string | null
+          id: string
+          last_message_at: string
+          last_message_preview: string
+          last_sender: Database["public"]["Enums"]["message_sender"] | null
+          order_id: string | null
+          status: Database["public"]["Enums"]["conversation_status"]
+          subject: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "conversations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      unread_conversation_count: { Args: never; Returns: number }
     }
     Enums: {
       attention_reason:
@@ -1338,6 +1537,8 @@ export type Database = {
         | "shipment_create_failed"
         | "amount_mismatch"
         | "duplicate_payment"
+      conversation_status: "open" | "closed"
+      message_sender: "customer" | "admin" | "system"
       payment_attempt_status:
         | "pending"
         | "settlement"
@@ -1498,6 +1699,8 @@ export const Constants = {
         "amount_mismatch",
         "duplicate_payment",
       ],
+      conversation_status: ["open", "closed"],
+      message_sender: ["customer", "admin", "system"],
       payment_attempt_status: [
         "pending",
         "settlement",
