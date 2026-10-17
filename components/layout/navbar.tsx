@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CartButton } from "@/features/cart";
 
 import { CartSession } from "./cart-session";
+import { ReviewPromptSession } from "./review-prompt-session";
 import { Container } from "./container";
 import { MobileNav } from "./mobile-nav";
 import { NAV_LINKS } from "./nav-links";
@@ -57,6 +58,9 @@ export function Navbar() {
           <CartButton />
           <Suspense fallback={null}>
             <CartSession />
+          </Suspense>
+          <Suspense fallback={null}>
+            <ReviewPromptSession />
           </Suspense>
           {/* Membaca session per request → wajib di dalam Suspense (Cache Components). */}
           <Suspense fallback={<Skeleton className="size-8 rounded-full" />}>

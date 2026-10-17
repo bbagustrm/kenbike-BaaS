@@ -109,6 +109,12 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
 - [ ] Pembeli → detail pesanan → **Unduh invoice** menghasilkan PDF A4; pesanan yang belum dibayar
       tidak punya tombol invoice, dan membuka `/api/orders/<nomor pesanan orang lain>/invoice` → 404.
 - [ ] Pembeli → detail pesanan: timeline berubah menjadi **Dikirim** lalu **Selesai**; nomor resi tampil.
+- [ ] **Ulasan**: setelah status Selesai (delivered), buka situs sebagai pembeli → modal **Pesananmu
+      sudah sampai** → **Beri ulasan**: pilih bintang, klik beberapa quick text, tulis teks, unggah 1–5
+      foto → **Kirim**. Ulasan tampil di **setiap produk** pesanan (refresh halaman produk) dan rating
+      kartu katalog terbarui. Detail pesanan menampilkan **Ulasanmu** (tanpa tombol ubah). Pesanan
+      lain yang delivered → **Nanti** → modal tidak muncul lagi untuk pesanan itu, tombol **Beri
+      ulasan** tetap ada di detail pesanan.
 - [ ] Kirim event yang sama dua kali → respons `"outcome":"duplicate"`, timeline tidak dobel.
 - [ ] Secret salah → `401`.
 

@@ -15,6 +15,8 @@ import { canDownloadInvoice, InvoiceButton } from "@/features/documents";
 import { CancelOrderDialog, isCancellable, RefundPanel } from "@/features/refunds";
 import { customerCancelOrder } from "@/features/refunds/actions";
 import { getRefund } from "@/features/refunds/queries";
+import { MyReviewCard, ReviewOrderButton } from "@/features/reviews";
+import { getMyOrderReview } from "@/features/reviews/queries";
 import { BuyAgainButton, OrderTimeline, orderDisplayStatus, StatusBadge } from "@/features/orders";
 import { getMyOrder } from "@/features/orders/queries";
 import { requireUser } from "@/lib/auth/session";
@@ -45,10 +47,14 @@ export default function OrderDetailPage({ params }: PageProps<"/account/orders/[
 }
 
 async function OrderDetail({ orderNumber }: { orderNumber: string }) {
-  await requireUser(`/account/orders/${encodeURIComponent(orderNumber)}`);
+  const user = await requireUser(`/account/orders/${encodeURIComponent(orderNumber)}`);
   const order = await getMyOrder(orderNumber);
   if (!order) notFound();
-  const refund = order.paymentStatus === "paid" ? null : await getRefund(order.id);
+  const delivered = order.shippingStatus === "delivered";
+  const [refund, review] = await Promise.all([
+    order.paymentStatus === "paid" ? null : getRefund(order.id),
+    delivered ? getMyOrderReview(order.id) : null,
+  ]);
 
   const status = orderDisplayStatus(order.paymentStatus, order.shippingStatus);
   const pending = order.paymentStatus === "pending_payment";
@@ -75,6 +81,21 @@ async function OrderDetail({ orderNumber }: { orderNumber: string }) {
         <div className="flex flex-wrap gap-2">
           {canDownloadInvoice(order.paymentStatus) && (
             <InvoiceButton orderNumber={order.orderNumber} />
+          )}
+          {delivered && !review && (
+            <ReviewOrderButton
+              userId={user.id}
+              order={{
+                orderId: order.id,
+                orderNumber: order.orderNumber,
+                items: order.items.map((i) => ({
+                  name: i.name,
+                  variant: i.variantLabel,
+                  image: i.imagePath,
+                  quantity: i.quantity,
+                })),
+              }}
+            />
           )}
           <OrderChatButton orderId={order.id} />
           {finished && <BuyAgainButton orderNumber={order.orderNumber} />}
@@ -176,6 +197,7 @@ async function OrderDetail({ orderNumber }: { orderNumber: string }) {
         </div>
 
         <div className="space-y-6">
+          {review && <MyReviewCard review={review} />}
           {refund && <RefundPanel orderId={order.id} refund={refund} />}
 
           <Card>
