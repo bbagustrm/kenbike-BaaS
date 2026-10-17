@@ -567,6 +567,78 @@ export type Database = {
           },
         ]
       }
+      product_comments: {
+        Row: {
+          body: string
+          created_at: string
+          hidden_at: string | null
+          hidden_by: string | null
+          id: string
+          is_hidden: boolean
+          parent_id: string | null
+          product_id: string
+          profile_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          is_hidden?: boolean
+          parent_id?: string | null
+          product_id: string
+          profile_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          is_hidden?: boolean
+          parent_id?: string | null
+          product_id?: string
+          profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_comments_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "product_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_comments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_comments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_comments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_images: {
         Row: {
           alt_text: string | null
@@ -1344,6 +1416,10 @@ export type Database = {
         Args: { p_days?: number; p_low_stock?: number }
         Returns: Json
       }
+      admin_delete_comment: {
+        Args: { p_comment_id: string }
+        Returns: undefined
+      }
       admin_delete_review: { Args: { p_review_id: string }; Returns: undefined }
       admin_get_stock: {
         Args: { variant_ids: string[] }
@@ -1365,6 +1441,29 @@ export type Database = {
           p_variant_label?: string
         }
         Returns: string
+      }
+      admin_list_comments: {
+        Args: {
+          p_filter?: string
+          p_limit?: number
+          p_offset?: number
+          p_product_id?: string
+          p_q?: string
+        }
+        Returns: {
+          answered: boolean
+          author_email: string
+          author_name: string
+          body: string
+          created_at: string
+          id: string
+          is_hidden: boolean
+          product_id: string
+          product_name: string
+          product_slug: string
+          replies: Json
+          total_count: number
+        }[]
       }
       admin_list_conversations: {
         Args: {
@@ -1414,6 +1513,10 @@ export type Database = {
         Args: { p_reply: string; p_review_id: string }
         Returns: undefined
       }
+      admin_set_comment_hidden: {
+        Args: { p_comment_id: string; p_hidden: boolean }
+        Returns: undefined
+      }
       admin_set_role: {
         Args: {
           p_role: Database["public"]["Enums"]["user_role"]
@@ -1421,6 +1524,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_unanswered_comment_count: { Args: never; Returns: number }
       admin_update_product: {
         Args: { p_product_id: string; payload: Json }
         Returns: undefined
@@ -1600,6 +1704,22 @@ export type Database = {
           variant_id: string
         }[]
       }
+      list_product_comments: {
+        Args: {
+          p_before_at?: string
+          p_before_id?: string
+          p_limit?: number
+          p_product_id: string
+        }
+        Returns: {
+          author_is_admin: boolean
+          author_name: string
+          body: string
+          created_at: string
+          id: string
+          replies: Json
+        }[]
+      }
       list_product_reviews: {
         Args: {
           p_before_at?: string
@@ -1644,6 +1764,10 @@ export type Database = {
           order_number: string
         }[]
       }
+      post_product_comment: {
+        Args: { p_body: string; p_parent_id?: string; p_product_id: string }
+        Returns: string
+      }
       post_system_message: {
         Args: { p_body: string; p_order_id: string }
         Returns: {
@@ -1662,6 +1786,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      product_comment_count: { Args: { p_product_id: string }; Returns: number }
       product_rating_summary: {
         Args: { p_product_id: string }
         Returns: {
