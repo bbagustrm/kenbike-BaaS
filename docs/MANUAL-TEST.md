@@ -124,6 +124,12 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
 - [ ] Pesanan yang sudah dikirim: tombol **Batalkan & refund** tidak muncul.
 - [ ] **Selesaikan** tanda "Perlu tindakan".
 - [ ] Pengguna: daftar & pencarian tampil.
+- [ ] **Pesan** (chat): menu sidebar menampilkan badge jumlah percakapan yang butuh balasan.
+      Buka percakapan → pesan tampil, badge berkurang. Balas teks + lampiran (gambar & PDF) →
+      pembeli menerimanya **tanpa refresh** (buka akun pembeli di browser lain). Pesan pembeli
+      juga muncul realtime di sisi admin dan menaikkan badge. **Tandai selesai** → hilang dari
+      "Butuh balasan"; pembeli membalas → terbuka lagi. Filter jenis/status & pencarian email/no.
+      pesanan berfungsi; tampilan HP satu kolom.
 - [ ] Detail pesanan dibayar → **Unduh invoice** (PDF A4, cap LUNAS, SKU tampil) dan **Unduh resi**
       (barcode nomor resi / nomor pesanan). Coba tiap ukuran di menu ▾ (100×150, 100×100, roll 80,
       roll 58) dan **Ukuran kustom…**; ukuran terakhir diingat setelah refresh.

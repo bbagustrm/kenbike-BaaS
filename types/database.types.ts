@@ -1193,6 +1193,31 @@ export type Database = {
           variant_id: string
         }[]
       }
+      admin_list_conversations: {
+        Args: {
+          p_before_at?: string
+          p_before_id?: string
+          p_filter?: string
+          p_kind?: string
+          p_limit?: number
+          p_q?: string
+        }
+        Returns: {
+          customer_email: string
+          customer_id: string
+          customer_name: string
+          id: string
+          last_message_at: string
+          last_message_preview: string
+          last_sender: Database["public"]["Enums"]["message_sender"]
+          needs_reply: boolean
+          order_id: string
+          order_number: string
+          status: Database["public"]["Enums"]["conversation_status"]
+          subject: string
+          unread: boolean
+        }[]
+      }
       admin_list_users: {
         Args: {
           p_limit?: number

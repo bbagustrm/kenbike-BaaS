@@ -4,6 +4,7 @@ import {
   ExternalLinkIcon,
   FolderTreeIcon,
   LayoutDashboardIcon,
+  MessagesSquareIcon,
   PackageIcon,
   ReceiptTextIcon,
   SettingsIcon,
@@ -22,14 +23,17 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { UnreadBadge } from "@/features/chat/components/unread-badge";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboardIcon, exact: true },
   { href: "/admin/orders", label: "Pesanan", icon: ReceiptTextIcon },
+  { href: "/admin/messages", label: "Pesan", icon: MessagesSquareIcon, badge: true },
   { href: "/admin/products", label: "Produk", icon: PackageIcon },
   { href: "/admin/categories", label: "Kategori", icon: FolderTreeIcon },
   { href: "/admin/users", label: "Pengguna", icon: UsersIcon },
@@ -103,6 +107,11 @@ function NavItems({ pathname }: { pathname: string | null }) {
             <item.icon />
             <span>{item.label}</span>
           </SidebarMenuButton>
+          {"badge" in item && (
+            <SidebarMenuBadge>
+              <UnreadBadge />
+            </SidebarMenuBadge>
+          )}
         </SidebarMenuItem>
       ))}
     </SidebarMenu>
