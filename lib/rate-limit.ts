@@ -12,6 +12,8 @@ export const RATE_LIMITS = {
   documents: { limit: 20, windowSeconds: 60 },
   cancelOrder: { limit: 5, windowSeconds: 60 },
   refundAccount: { limit: 10, windowSeconds: 60 },
+  chatMessage: { limit: 30, windowSeconds: 60 },
+  chatStart: { limit: 5, windowSeconds: 60 },
 } as const;
 
 export type RateLimitedAction = keyof typeof RATE_LIMITS;

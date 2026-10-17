@@ -153,3 +153,26 @@ select pg_temp.check('messages & conversations ada di publikasi realtime',
   (select count(*) from pg_publication_tables
    where pubname = 'supabase_realtime' and schemaname = 'public'
      and tablename in ('messages', 'conversations')) = 2);
+
+-- ------------------------------------------------------------
+-- #100 admin_list_conversations
+-- ------------------------------------------------------------
+select pg_temp.login('00000000-0000-0000-0000-0000000000e1');
+set local role authenticated;
+select pg_temp.throws('pembeli tidak bisa memanggil admin_list_conversations',
+  $$ select * from public.admin_list_conversations() $$, '42501');
+reset role;
+select pg_temp.login('00000000-0000-0000-0000-0000000000ea');
+set local role authenticated;
+select pg_temp.check('admin: butuh balasan memuat chat umum E1 (pesan terakhir dari pembeli)',
+  exists (select 1 from public.admin_list_conversations('needs_reply') where id = pg_temp.ctx('general')));
+select pg_temp.check('admin: cari email pembeli',
+  exists (select 1 from public.admin_list_conversations('all', null, 'e1@test.local') where id = pg_temp.ctx('general')));
+select pg_temp.check('admin: filter jenis pesanan hanya chat pesanan',
+  (select bool_and(order_id is not null) from public.admin_list_conversations('all', 'order')));
+select pg_temp.check('admin: cari nomor pesanan',
+  exists (select 1 from public.admin_list_conversations('all', null, (select order_number from public.orders where id = pg_temp.ctx('order')))
+          where id = pg_temp.ctx('orderchat')));
+select pg_temp.eq('admin: limit dihormati',
+  (select count(*) from public.admin_list_conversations('all', null, null, 1)), 1::bigint);
+reset role;

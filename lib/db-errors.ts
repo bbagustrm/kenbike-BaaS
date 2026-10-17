@@ -31,6 +31,11 @@ const RAISED_MESSAGES: Record<string, string> = {
   invalid_account: "Data rekening tidak valid. Periksa nama bank, nomor, dan pemilik rekening.",
   refund_not_editable: "Data rekening tidak bisa diubah karena refund sudah selesai.",
   refund_not_found: "Refund tidak ditemukan atau sudah selesai.",
+  conversation_not_found: "Percakapan tidak ditemukan.",
+  empty_message: "Tulis pesan atau lampirkan file.",
+  message_too_long: "Pesan terlalu panjang (maksimal 4000 karakter).",
+  invalid_attachments: "Lampiran tidak valid. Unggah ulang.",
+  invalid_subject: "Topik percakapan tidak valid.",
   refund_account_missing:
     "Rekening tujuan belum diisi. Minta pembeli mengisinya atau isi dari chat.",
   proof_or_note_required: "Unggah bukti transfer atau tulis catatan.",
