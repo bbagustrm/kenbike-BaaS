@@ -31,7 +31,7 @@ const EMPTY: ProductFormValues = {
   name: "",
   slug: "",
   categoryId: "",
-  description: "",
+  descriptionDoc: null,
   isActive: true,
   isPreorder: false,
   preorderDays: null,

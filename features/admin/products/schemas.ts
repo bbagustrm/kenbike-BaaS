@@ -1,6 +1,14 @@
 import { z } from "zod";
 
+import {
+  type DocNode,
+  docToPlainText,
+  isEmptyDoc,
+  sanitizeDoc,
+} from "@/features/rich-text/document";
+import { publicEnv } from "@/lib/env/public";
 import { SLUG_PATTERN } from "@/lib/slug";
+import type { Json } from "@/types/database.types";
 
 export const MAX_OPTIONS = 3;
 export const MAX_VALUES_PER_OPTION = 30;
@@ -61,7 +69,11 @@ export const productFormSchema = z
       .max(150, { error: "Maksimal 150 karakter" })
       .regex(SLUG_PATTERN, { error: "Hanya huruf kecil, angka, dan tanda hubung" }),
     categoryId: z.uuid({ error: "Pilih kategori" }),
-    description: z.string().trim().max(5000, { error: "Maksimal 5000 karakter" }),
+    /** Dokumen editor rich text (dibersihkan lagi di toRpcPayload). */
+    descriptionDoc: z.custom<DocNode | null>(
+      (v) => v === null || (typeof v === "object" && !Array.isArray(v)),
+      { error: "Deskripsi tidak valid" },
+    ),
     isActive: z.boolean(),
     isPreorder: z.boolean(),
     /** Estimasi siap kirim (hari); wajib bila pre-order. */
@@ -112,11 +124,15 @@ export type OptionFormValues = z.infer<typeof optionFormSchema>;
 
 /** Bentuk payload RPC admin_create_product / admin_update_product. */
 export function toRpcPayload(values: ProductFormValues) {
+  // Hanya node/atribut yang diizinkan yang disimpan; teks polosnya untuk SEO & pencarian.
+  const doc = sanitizeDoc(values.descriptionDoc, publicEnv.NEXT_PUBLIC_SUPABASE_URL);
+  const empty = isEmptyDoc(doc);
   return {
     category_id: values.categoryId,
     name: values.name,
     slug: values.slug,
-    description: values.description || null,
+    description: empty ? null : docToPlainText(doc) || null,
+    description_doc: empty ? null : (doc as unknown as Json),
     is_active: values.isActive,
     is_preorder: values.isPreorder,
     preorder_days: values.isPreorder ? values.preorderDays : null,

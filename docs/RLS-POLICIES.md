@@ -106,6 +106,7 @@ Catatan: tabel admin-only (mis. `order_internal_notes`, `stock_adjustments`) tet
 | `*_admin_conversations.sql`     | `admin_list_conversations` (inbox admin: nama/email pembeli, nomor pesanan, filter, cursor)                                                                                            |
 | `*_reviews.sql`                 | ulasan per pesanan & impor, foto, agregat `products.rating_avg/count` (hanya trigger), `orders.review_prompt_dismissed_at`, kolom rating di `product_listings`, bucket `review-photos` |
 | `*_product_comments.sql`        | komentar produk (balasan 1 tingkat lewat trigger), RPC publik & admin                                                                                                                  |
+| `*_rich_description.sql`        | `products.description_doc` (JSON Tiptap, dibersihkan aplikasi), backfill dari teks lama, RPC produk admin menyimpannya                                                                 |
 
 ---
 

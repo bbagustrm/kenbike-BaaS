@@ -17,7 +17,10 @@ describe("contentSecurityPolicy", () => {
     expect(directive("connect-src")).toEqual(
       expect.arrayContaining([supabaseUrl, "wss://abc.supabase.co", "https://*.midtrans.com"]),
     );
-    expect(directive("frame-src")).toEqual(["https://*.midtrans.com"]);
+    expect(directive("frame-src")).toEqual([
+      "https://*.midtrans.com",
+      "https://www.youtube-nocookie.com",
+    ]);
     expect(directive("img-src")).toContain(supabaseUrl);
   });
 

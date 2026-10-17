@@ -1,3 +1,5 @@
+import type { DocNode } from "@/features/rich-text/document";
+
 export type Category = {
   id: string;
   name: string;
@@ -49,6 +51,8 @@ export type ProductDetail = {
   slug: string;
   name: string;
   description: string | null;
+  /** Dokumen rich text yang sudah dibersihkan (null = pakai teks polos/kosong). */
+  descriptionDoc: DocNode | null;
   /** Estimasi hari kirim bila produk pre-order, selain itu null. */
   preorderDays: number | null;
   breadcrumb: Category[];

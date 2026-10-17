@@ -851,6 +851,7 @@ export type Database = {
           category_id: string
           created_at: string
           description: string | null
+          description_doc: Json | null
           id: string
           is_active: boolean
           is_preorder: boolean
@@ -865,6 +866,7 @@ export type Database = {
           category_id: string
           created_at?: string
           description?: string | null
+          description_doc?: Json | null
           id?: string
           is_active?: boolean
           is_preorder?: boolean
@@ -879,6 +881,7 @@ export type Database = {
           category_id?: string
           created_at?: string
           description?: string | null
+          description_doc?: Json | null
           id?: string
           is_active?: boolean
           is_preorder?: boolean

@@ -1,4 +1,5 @@
 import "server-only";
+import type { DocNode } from "@/features/rich-text/document";
 
 import { pickPrimaryImage } from "@/lib/product-images";
 import { escapeLike } from "@/lib/search";
@@ -162,7 +163,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
   const { data, error } = await supabase
     .from("products")
     .select(
-      `id, name, slug, description, category_id, is_active, is_preorder, preorder_days,
+      `id, name, slug, description, description_doc, category_id, is_active, is_preorder, preorder_days,
        options:product_options (id, name, sort_order,
          values:product_option_values (id, value, sort_order)),
        variants:product_variants (id, sku, price, weight_gram, length_cm, width_cm, height_cm, is_active, created_at,
@@ -196,7 +197,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
       name: data.name,
       slug: data.slug,
       categoryId: data.category_id,
-      description: data.description ?? "",
+      descriptionDoc: (data.description_doc as DocNode | null) ?? null,
       isActive: data.is_active,
       isPreorder: data.is_preorder,
       preorderDays: data.preorder_days,
