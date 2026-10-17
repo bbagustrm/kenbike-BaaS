@@ -72,6 +72,7 @@ export type AddressSnapshot = {
 };
 
 export type OrderDetail = {
+  id: string;
   orderNumber: string;
   createdAt: string;
   paidAt: string | null;
@@ -131,6 +132,7 @@ export async function getMyOrder(orderNumber: string): Promise<OrderDetail | nul
 
   const payment = [...o.payments].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
   return {
+    id: o.id,
     orderNumber: o.order_number,
     createdAt: o.created_at,
     paidAt: o.paid_at,

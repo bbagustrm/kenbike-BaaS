@@ -54,7 +54,12 @@ export function RefundPanel({
               a.n. {refund.account.accountHolder}
             </p>
           ) : (
-            <p className="text-muted-foreground">Belum diisi.</p>
+            <p className="text-muted-foreground">
+              Belum diisi.{" "}
+              {admin
+                ? "Minta pembeli mengisinya, atau isi sendiri dari percakapan chat."
+                : "Isi agar dana bisa kami transfer."}
+            </p>
           )}
         </div>
 
