@@ -2,6 +2,7 @@
 
 import { ClockIcon, PackageIcon } from "lucide-react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { RichTextEditor } from "@/features/rich-text/components/rich-text-editor";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -15,7 +16,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { slugify } from "@/lib/slug";
 
 import type { ProductFormValues } from "../schemas";
@@ -109,10 +109,24 @@ export function ProductInfoSection({
             <FieldError>{errors.categoryId?.message}</FieldError>
           </Field>
         </div>
-        <Field data-invalid={invalid(errors.description)}>
+        <Field data-invalid={invalid(errors.descriptionDoc)}>
           <FieldLabel htmlFor="description">Deskripsi</FieldLabel>
-          <Textarea id="description" rows={5} {...register("description")} />
-          <FieldError>{errors.description?.message}</FieldError>
+          <Controller
+            control={control}
+            name="descriptionDoc"
+            render={({ field }) => (
+              <RichTextEditor
+                id="description"
+                value={field.value}
+                onChange={field.onChange}
+                invalid={invalid(errors.descriptionDoc)}
+              />
+            )}
+          />
+          <FieldDescription>
+            Gunakan heading & tabel untuk spesifikasi; gambar dan video YouTube bisa disisipkan.
+          </FieldDescription>
+          <FieldError>{errors.descriptionDoc?.message}</FieldError>
         </Field>
         <Field orientation="horizontal">
           <Controller

@@ -2,6 +2,8 @@ import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
 
+import { sanitizeDoc } from "@/features/rich-text/document";
+import { publicEnv } from "@/lib/env/public";
 import { escapeLike } from "@/lib/search";
 import { createPublicClient } from "@/lib/supabase/public";
 
@@ -154,7 +156,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
   const { data, error } = await createPublicClient()
     .from("products")
     .select(
-      `id, slug, name, description, category_id, is_preorder, preorder_days, rating_avg, rating_count,
+      `id, slug, name, description, description_doc, category_id, is_preorder, preorder_days, rating_avg, rating_count,
        options:product_options (id, name, sort_order,
          values:product_option_values (id, value, sort_order)),
        variants:product_variants (id, sku, price, weight_gram, length_cm, width_cm, height_cm,
@@ -195,6 +197,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     slug: data.slug,
     name: data.name,
     description: data.description,
+    descriptionDoc: sanitizeDoc(data.description_doc, publicEnv.NEXT_PUBLIC_SUPABASE_URL),
     preorderDays: data.is_preorder ? data.preorder_days : null,
     rating: { avg: Number(data.rating_avg), count: data.rating_count },
     breadcrumb,

@@ -29,6 +29,8 @@ import {
 import type { ProductDetail } from "@/features/catalog";
 import { ProductComments } from "@/features/comments";
 import { ProductReviews } from "@/features/reviews";
+import { RichTextView } from "@/features/rich-text/components/rich-text-view";
+import { isEmptyDoc } from "@/features/rich-text/document";
 import { publicEnv } from "@/lib/env/public";
 import { productImageUrl } from "@/lib/product-images";
 
@@ -110,7 +112,9 @@ function ProductSections({ product }: { product: ProductDetail }) {
       <AccordionItem value="description">
         <AccordionTrigger className="py-4 text-base font-semibold">Deskripsi</AccordionTrigger>
         <AccordionContent keepMounted>
-          {product.description ? (
+          {product.descriptionDoc && !isEmptyDoc(product.descriptionDoc) ? (
+            <RichTextView doc={product.descriptionDoc} />
+          ) : product.description ? (
             <p className="whitespace-pre-line text-muted-foreground">{product.description}</p>
           ) : (
             <p className="text-muted-foreground">Belum ada deskripsi.</p>

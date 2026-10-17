@@ -11,7 +11,7 @@ const valid: ProductFormValues = {
   name: "Jersey Uji",
   slug: "jersey-uji",
   categoryId: "11111111-2222-4333-8444-555555555555",
-  description: "",
+  descriptionDoc: null,
   isActive: true,
   isPreorder: false,
   preorderDays: null,
@@ -72,6 +72,22 @@ describe("toRpcPayload", () => {
     expect(payload.variants[1]).toMatchObject({ initial_stock: 4, options: { Ukuran: "L" } });
     expect(payload.variants[1]).not.toHaveProperty("id");
     expect(payload.description).toBeNull();
+    expect(payload.description_doc).toBeNull();
+  });
+
+  it("deskripsi rich text dibersihkan & menghasilkan teks polos", () => {
+    const payload = toRpcPayload({
+      ...valid,
+      descriptionDoc: {
+        type: "doc",
+        content: [
+          { type: "paragraph", content: [{ type: "text", text: "Frame alloy ringan" }] },
+          { type: "script", content: [{ type: "text", text: "alert(1)" }] },
+        ],
+      },
+    });
+    expect(payload.description).toBe("Frame alloy ringan");
+    expect((payload.description_doc as { content: unknown[] }).content).toHaveLength(1);
   });
 });
 

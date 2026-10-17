@@ -126,6 +126,10 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
 ## 7. Admin
 
 - [ ] Produk: buat produk baru (dengan varian & gambar) → kembali ke `/admin/products`; edit, nonaktifkan.
+- [ ] **Deskripsi rich text**: di form produk pakai heading, tebal/miring, daftar, link, sisipkan
+      gambar (terunggah & tampil), tabel spesifikasi (tambah/hapus baris & kolom), video YouTube
+      (tempel link) → simpan → halaman produk menampilkan semuanya; tabel bisa di-scroll di HP;
+      deskripsi lama (teks polos) tetap tampil sebagai paragraf.
 - [ ] Kategori: tambah, ubah, hapus (kategori yang dipakai produk ditolak).
 - [ ] Pesanan: filter status & pencarian nomor pesanan/nama; tambahkan **catatan internal**.
 - [ ] Pesanan lunas yang belum diambil kurir → **Batalkan & refund** (pilih alasan; coba sekali
