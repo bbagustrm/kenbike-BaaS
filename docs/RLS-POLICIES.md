@@ -67,6 +67,8 @@
 | order_internal_notes                                                                      | —                               | —                                             | R + insert (atas namanya)    |                                                                                                                                     |
 | shipments                                                                                 | —                               | R own                                         | R, U (`waybill_id`, tanggal) | SR (insert)                                                                                                                         |
 | refunds                                                                                   | —                               | R own (termasuk rekening tujuan)              | R                            | RPC `cancel_paid_order`, `set_refund_account`, `complete_refund`; SR (webhook refund Midtrans)                                      |
+| conversations                                                                             | —                               | R own                                         | R                            | RPC `start_conversation`, `set_conversation_status`, `mark_conversation_read`; trigger dari `messages`; SR `post_system_message`    |
+| messages                                                                                  | —                               | R (percakapan miliknya)                       | R                            | RPC `send_message` (peran pengirim ditentukan server), SR `post_system_message`                                                     |
 
 Catatan: tabel admin-only (mis. `order_internal_notes`, `stock_adjustments`) tetap di-`GRANT SELECT` ke `authenticated`; RLS yang memfilter sehingga customer mendapat **0 baris**, bukan error.
 
@@ -74,29 +76,31 @@ Catatan: tabel admin-only (mis. `order_internal_notes`, `stock_adjustments`) tet
 
 ## 4. Lokasi Implementasi
 
-| Migrasi                     | Isi                                                                                                                 |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `*_base.sql`                | extensions (`pg_trgm`, `pg_cron`), enums, schema `private`, default privileges, nomor order                         |
-| `*_profiles_addresses.sql`  | profiles, addresses, store_settings, trigger signup                                                                 |
-| `*_catalog.sql`             | katalog + `stock_adjustments`                                                                                       |
-| `*_cart.sql`                | carts, cart_items                                                                                                   |
-| `*_orders.sql`              | orders, order_items, payments, stock_reservations, history, notes, shipments                                        |
-| `*_rls.sql`                 | `private.is_admin()`, RLS, grants, semua policy                                                                     |
-| `*_storage.sql`             | bucket `product-images` + policy                                                                                    |
-| `*_rpc_catalog_cart.sql`    | `get_variant_availability`, `get_or_create_cart`, `merge_guest_cart`                                                |
-| `*_rpc_orders.sql`          | `create_order`, `cancel_order`, `confirm_payment`, `release_reservations`, `expire_pending_orders` + jadwal pg_cron |
-| `*_rpc_admin.sql`           | `admin_create_product`, `admin_update_product`, `admin_get_stock`, `admin_adjust_stock`, `admin_set_role`           |
-| `*_product_listings.sql`    | view `product_listings` (security_invoker)                                                                          |
-| `*_preorder.sql`            | kolom pre-order produk + snapshot di `order_items`                                                                  |
-| `*_cart_adopt_guest.sql`    | `merge_guest_cart` → `adopted` / `kept`                                                                             |
-| `*_address_rules.sql`       | trigger buku alamat (satu utama, maks. 20)                                                                          |
-| `*_shipment_tracking.sql`   | `shipments.tracking_id`, `tracking_url` (link lacak Biteship)                                                       |
-| `*_admin_orders.sql`        | `admin_list_users` (email dari auth.users), `admin_dashboard_stats` (agregasi omzet/antrian/stok menipis)           |
-| `*_store_contact_email.sql` | `store_settings.email` (kontak publik, dibaca server & di-cache)                                                    |
-| `*_rate_limit.sql`          | `private.rate_limits` + `check_rate_limit` (service role saja) + cron cleanup                                       |
-| `*_cron_health.sql`         | `admin_cron_health` (status job pg_cron untuk dashboard)                                                            |
-| `*_refund_enums.sql`        | `payment_status.refund_pending`, enum `refund_status`                                                               |
-| `*_refunds.sql`             | tabel `refunds`, RPC pembatalan & refund, bucket `refund-proofs`                                                    |
+| Migrasi                         | Isi                                                                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `*_base.sql`                    | extensions (`pg_trgm`, `pg_cron`), enums, schema `private`, default privileges, nomor order                         |
+| `*_profiles_addresses.sql`      | profiles, addresses, store_settings, trigger signup                                                                 |
+| `*_catalog.sql`                 | katalog + `stock_adjustments`                                                                                       |
+| `*_cart.sql`                    | carts, cart_items                                                                                                   |
+| `*_orders.sql`                  | orders, order_items, payments, stock_reservations, history, notes, shipments                                        |
+| `*_rls.sql`                     | `private.is_admin()`, RLS, grants, semua policy                                                                     |
+| `*_storage.sql`                 | bucket `product-images` + policy                                                                                    |
+| `*_rpc_catalog_cart.sql`        | `get_variant_availability`, `get_or_create_cart`, `merge_guest_cart`                                                |
+| `*_rpc_orders.sql`              | `create_order`, `cancel_order`, `confirm_payment`, `release_reservations`, `expire_pending_orders` + jadwal pg_cron |
+| `*_rpc_admin.sql`               | `admin_create_product`, `admin_update_product`, `admin_get_stock`, `admin_adjust_stock`, `admin_set_role`           |
+| `*_product_listings.sql`        | view `product_listings` (security_invoker)                                                                          |
+| `*_preorder.sql`                | kolom pre-order produk + snapshot di `order_items`                                                                  |
+| `*_cart_adopt_guest.sql`        | `merge_guest_cart` → `adopted` / `kept`                                                                             |
+| `*_address_rules.sql`           | trigger buku alamat (satu utama, maks. 20)                                                                          |
+| `*_shipment_tracking.sql`       | `shipments.tracking_id`, `tracking_url` (link lacak Biteship)                                                       |
+| `*_admin_orders.sql`            | `admin_list_users` (email dari auth.users), `admin_dashboard_stats` (agregasi omzet/antrian/stok menipis)           |
+| `*_store_contact_email.sql`     | `store_settings.email` (kontak publik, dibaca server & di-cache)                                                    |
+| `*_rate_limit.sql`              | `private.rate_limits` + `check_rate_limit` (service role saja) + cron cleanup                                       |
+| `*_cron_health.sql`             | `admin_cron_health` (status job pg_cron untuk dashboard)                                                            |
+| `*_refund_enums.sql`            | `payment_status.refund_pending`, enum `refund_status`                                                               |
+| `*_refunds.sql`                 | tabel `refunds`, RPC pembatalan & refund, bucket `refund-proofs`                                                    |
+| `*_refund_requires_account.sql` | `complete_refund` mewajibkan rekening tujuan                                                                        |
+| `*_chat.sql`                    | conversations, messages, RPC chat, publikasi Realtime, bucket `chat-attachments`                                    |
 
 ---
 
@@ -105,6 +109,10 @@ Catatan: tabel admin-only (mis. `order_internal_notes`, `stock_adjustments`) tet
 Bucket `product-images`: **public** (dibaca lewat URL publik/CDN), MIME `image/jpeg|png|webp`, maks 5 MB. Policy `storage.objects` untuk select/insert/update/delete hanya bila `bucket_id = 'product-images'` dan `private.is_admin()`.
 
 Bucket `refund-proofs`: **privat**, MIME `image/jpeg|png|webp`, `application/pdf`, maks 5 MB, path `{order_id}/{file}`. Tulis/hapus hanya admin; baca admin & pembeli pemilik order (folder pertama = id order miliknya).
+
+Bucket `chat-attachments`: **privat**, MIME `image/jpeg|png|webp`, `application/pdf`, maks 5 MB, path `{conversation_id}/{uuid}.{ext}`. Unggah & baca: peserta percakapan (pemilik + admin) lewat `private.chat_folder_access`; hapus hanya admin.
+
+Realtime: `messages` & `conversations` ada di publikasi `supabase_realtime`; `postgres_changes` mengikuti policy SELECT di atas sehingga pembeli hanya menerima event percakapannya sendiri.
 
 ---
 
@@ -119,6 +127,11 @@ Bucket `refund-proofs`: **privat**, MIME `image/jpeg|png|webp`, `application/pdf
 | `cancel_paid_order(order_id, reason, restock?)`                                                          | authenticated (pemilik atau admin) | Order lunas yang belum diambil kurir (`shipping_status` null/pending/processing) → `refund_pending` + pengiriman `cancelled`, stok dikembalikan (admin boleh `restock = false`), buat baris `refunds` penuh. Order Biteship dibatalkan Server Action lebih dulu. |
 | `set_refund_account(order_id, bank, nomor, nama)`                                                        | authenticated (pemilik atau admin) | Isi/ubah rekening tujuan selama refund belum selesai → `pending_transfer`.                                                                                                                                                                                       |
 | `complete_refund(order_id, proof_path, note)`                                                            | authenticated (cek admin)          | Bukti (`{order_id}/…` di `refund-proofs`) atau catatan wajib → refund `completed`, order `refunded`.                                                                                                                                                             |
+| `start_conversation(subject, order_id?)`                                                                 | authenticated                      | Chat umum, atau chat pesanan milik pemanggil (satu per order; yang sudah ada dikembalikan).                                                                                                                                                                      |
+| `send_message(conversation_id, body, attachments?)`                                                      | authenticated (pemilik atau admin) | Teks ≤ 4000 dan/atau ≤ 5 lampiran di folder percakapan; peran `customer`/`admin` dari `is_admin()`. Balasan pembeli membuka kembali percakapan.                                                                                                                  |
+| `mark_conversation_read(id)` / `unread_conversation_count()`                                             | authenticated                      | Penanda dibaca per sisi; badge (admin: terbuka & pesan terakhir dari pembeli).                                                                                                                                                                                   |
+| `set_conversation_status(id, status)`                                                                    | authenticated (cek admin)          | Tutup / buka kembali.                                                                                                                                                                                                                                            |
+| `post_system_message(order_id, body)`                                                                    | service_role                       | Pesan sistem ke chat pesanan (dibuat bila belum ada).                                                                                                                                                                                                            |
 | `admin_create_product(payload)` / `admin_update_product(id, payload)`                                    | authenticated (cek admin di dalam) | Produk + opsi + varian dalam 1 transaksi; menolak 0 varian, mapping opsi tidak lengkap, kombinasi duplikat. Varian yang dibuang: dihapus bila belum pernah dipesan, selain itu dinonaktifkan.                                                                    |
 | `admin_get_stock(ids)` / `admin_adjust_stock(id, delta, reason)`                                         | authenticated (cek admin)          | Satu-satunya jalur baca/ubah stok fisik; perubahan tercatat di `stock_adjustments`.                                                                                                                                                                              |
 | `admin_set_role(user_id, role)`                                                                          | authenticated (cek admin)          | Satu-satunya jalur mengubah role; admin terakhir tidak bisa diturunkan.                                                                                                                                                                                          |
