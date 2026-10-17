@@ -85,6 +85,13 @@ export function validateProofFile(file: { type: string; size: number }): string 
   return null;
 }
 
+const ACCOUNT_REMINDER_MS = 2 * 24 * 60 * 60 * 1000;
+
+/** Rekening belum diisi lebih dari 2 hari sejak pembatalan → admin perlu mengingatkan. */
+export function isAccountOverdue(status: RefundStatus, createdAt: string, now: number): boolean {
+  return status === "awaiting_account" && now - Date.parse(createdAt) > ACCOUNT_REMINDER_MS;
+}
+
 export const REFUND_STATUS_LABEL: Record<RefundStatus, string> = {
   awaiting_account: "Menunggu data rekening",
   pending_transfer: "Siap ditransfer",

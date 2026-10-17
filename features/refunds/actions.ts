@@ -11,6 +11,8 @@ import { RATE_LIMITED_MESSAGE, rateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 import { cancelPaidOrder } from "./cancel";
+import { refundMessages } from "./messages";
+import { postRefundMessage } from "./notify";
 import {
   accountSchema,
   cancelSchema,
@@ -39,8 +41,18 @@ export async function adminCancelOrder(
   if (!parsed.success) return firstIssue(parsed.error);
 
   const result = await cancelPaidOrder({ orderId, ...parsed.data, actor: "admin" });
+  if (result.status === "success" && result.amount !== undefined) {
+    await postRefundMessage(
+      orderId,
+      refundMessages.cancelled({
+        actor: "admin",
+        reason: parsed.data.reason,
+        amount: result.amount,
+      }),
+    );
+  }
   refresh();
-  return result;
+  return { status: result.status, message: result.message };
 }
 
 /** Pembeli: batalkan pesanan lunas miliknya (stok selalu dikembalikan). */
@@ -70,6 +82,17 @@ export async function customerCancelOrder(
     p_account_number: account.data.accountNumber,
     p_account_holder: account.data.accountHolder,
   });
+  if (result.amount !== undefined) {
+    await postRefundMessage(
+      orderId,
+      refundMessages.cancelled({
+        actor: "customer",
+        reason: parsed.data.reason,
+        amount: result.amount,
+        account: error ? null : account.data,
+      }),
+    );
+  }
   refresh();
   if (error) {
     return {
@@ -105,6 +128,7 @@ export async function saveRefundAccount(
     p_account_holder: parsed.data.accountHolder,
   });
   if (error) return { status: "error", message: dbErrorMessage(error) };
+  await postRefundMessage(orderId, refundMessages.accountSaved(parsed.data));
 
   refresh();
   return { status: "success", message: "Data rekening disimpan." };
@@ -128,7 +152,7 @@ export async function completeRefund(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("complete_refund", {
+  const { data: refund, error } = await supabase.rpc("complete_refund", {
     p_order_id: orderId,
     p_proof_path: parsed.data.proofPath ?? "",
     p_note: parsed.data.note ?? "",
@@ -139,6 +163,21 @@ export async function completeRefund(
     }
     return { status: "error", message: dbErrorMessage(error) };
   }
+  await postRefundMessage(
+    orderId,
+    refundMessages.completed({
+      amount: refund.amount,
+      at: refund.processed_at ?? new Date().toISOString(),
+      account:
+        refund.bank_name && refund.account_number && refund.account_holder
+          ? {
+              bankName: refund.bank_name,
+              accountNumber: refund.account_number,
+              accountHolder: refund.account_holder,
+            }
+          : null,
+    }),
+  );
 
   refresh();
   return { status: "success", message: "Refund ditandai selesai." };

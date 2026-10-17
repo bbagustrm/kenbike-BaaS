@@ -2,7 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 
-import { REFUND_PROOF_BUCKET, type RefundStatus } from "./schemas";
+import { isAccountOverdue, REFUND_PROOF_BUCKET, type RefundStatus } from "./schemas";
 
 export type Refund = {
   amount: number;
@@ -15,6 +15,8 @@ export type Refund = {
   note: string | null;
   processedAt: string | null;
   createdAt: string;
+  /** Rekening belum diisi > 2 hari (dihitung saat query, bukan saat render). */
+  accountOverdue: boolean;
 };
 
 /**
@@ -60,5 +62,6 @@ export async function getRefund(orderId: string): Promise<Refund | null> {
     note: data.note,
     processedAt: data.processed_at,
     createdAt: data.created_at,
+    accountOverdue: isAccountOverdue(data.status, data.created_at, Date.now()),
   };
 }

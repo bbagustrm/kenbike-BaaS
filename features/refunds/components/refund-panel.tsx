@@ -1,4 +1,4 @@
-import { ExternalLinkIcon } from "lucide-react";
+import { AlertTriangleIcon, ExternalLinkIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,7 @@ export function RefundPanel({
   admin?: boolean;
 }) {
   const done = refund.status === "completed";
+  const overdue = admin && refund.accountOverdue;
 
   return (
     <Card>
@@ -32,6 +33,12 @@ export function RefundPanel({
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
+        {overdue && (
+          <p className="flex items-start gap-2 rounded-lg bg-amber-500/10 p-2 text-amber-700 dark:text-amber-400">
+            <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            Rekening belum diisi lebih dari 2 hari. Ingatkan pembeli lewat chat.
+          </p>
+        )}
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
           <dt className="text-muted-foreground">Nominal</dt>
           <dd className="font-medium">{formatRupiah(refund.amount)}</dd>

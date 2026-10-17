@@ -10,6 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChatThread } from "@/features/chat";
 import { getConversation, listMessages } from "@/features/chat/queries";
 import { orderDisplayStatus, StatusBadge } from "@/features/orders";
+import { RefundPanel } from "@/features/refunds";
+import { getRefund } from "@/features/refunds/queries";
 import { requireUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Percakapan", robots: { index: false } };
@@ -40,8 +42,11 @@ async function Conversation({ id }: { id: string }) {
   if (!UUID.test(id)) notFound();
   const conversation = await getConversation(id);
   if (!conversation) notFound();
-  const thread = await listMessages(id);
   const order = conversation.order;
+  const [thread, refund] = await Promise.all([
+    listMessages(id),
+    order ? getRefund(order.id) : null,
+  ]);
 
   return (
     <div className="space-y-4">
@@ -67,6 +72,9 @@ async function Conversation({ id }: { id: string }) {
           </p>
         )}
       </div>
+      {order && refund && refund.status !== "completed" && (
+        <RefundPanel orderId={order.id} refund={refund} />
+      )}
       <ChatThread
         key={conversation.id}
         conversationId={conversation.id}
