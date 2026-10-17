@@ -27,6 +27,7 @@ import {
   listProductSlugs,
 } from "@/features/catalog/queries";
 import type { ProductDetail } from "@/features/catalog";
+import { ProductComments } from "@/features/comments";
 import { ProductReviews } from "@/features/reviews";
 import { publicEnv } from "@/lib/env/public";
 import { productImageUrl } from "@/lib/product-images";
@@ -97,8 +98,9 @@ async function ProductContent({ slug }: { slug: string }) {
 }
 
 /**
- * Deskripsi & Ulasan terbuka secara default. Panel yang tertutup tidak dirender
- * (Base UI), jadi data ulasan baru diambil saat panelnya terbuka. Deskripsi
+ * Deskripsi & Ulasan terbuka secara default, Komentar tertutup. Panel yang
+ * tertutup tidak dirender (Base UI), jadi data ulasan/komentar baru diambil
+ * saat panelnya terbuka. Deskripsi
  * tetap di-render server agar terbaca mesin pencari.
  */
 function ProductSections({ product }: { product: ProductDetail }) {
@@ -129,6 +131,12 @@ function ProductSections({ product }: { product: ProductDetail }) {
         {/* Reset margin paragraf bawaan AccordionContent agar jarak antar-ulasan rapat. */}
         <AccordionContent className="[&_p:not(:last-child)]:mb-0">
           <ProductReviews productId={product.id} avg={avg} count={count} />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="comments" id="komentar" className="scroll-mt-20">
+        <AccordionTrigger className="py-4 text-base font-semibold">Komentar</AccordionTrigger>
+        <AccordionContent className="[&_p:not(:last-child)]:mb-0">
+          <ProductComments productId={product.id} productPath={`/products/${product.slug}`} />
         </AccordionContent>
       </AccordionItem>
     </Accordion>

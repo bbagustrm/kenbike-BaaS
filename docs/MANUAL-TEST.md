@@ -42,6 +42,11 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
 - [ ] Beranda & `/products` tampil; filter kategori, pencarian, sort berfungsi.
 - [ ] Detail produk: ganti varian → carousel gambar, label & deskripsi varian ikut berubah.
 - [ ] Varian stok 0 tidak bisa ditambahkan ke keranjang.
+- [ ] **Komentar** (detail produk, accordion tertutup): sebelum dibuka tidak ada request komentar;
+      dibuka → 5 komentar, scroll → 5 berikutnya. Tamu klik kolom/Balas → modal **Masuk untuk
+      berkomentar** → setelah login kembali ke produk. Login → kirim komentar (langsung tampil di
+      atas), **Balas** komentar (menjorok; tidak ada tombol balas di balasan). Balasan admin
+      berbadge **Admin**.
 
 ## 3. Keranjang
 
