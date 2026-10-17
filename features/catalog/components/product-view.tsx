@@ -5,6 +5,7 @@ import { Suspense, use, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Price } from "@/components/shared/price";
+import { formatRating, RatingStars } from "@/components/shared/rating-stars";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -48,6 +49,18 @@ export function ProductView({ product, availabilityPromise }: ProductViewProps) 
       <div className="space-y-6">
         <div className="space-y-2">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{product.name}</h1>
+          {product.rating.count > 0 && (
+            <a
+              href="#ulasan"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <RatingStars value={product.rating.avg} size="xs" />
+              <span className="font-medium text-foreground">
+                {formatRating(product.rating.avg)}
+              </span>
+              <span>({product.rating.count} ulasan)</span>
+            </a>
+          )}
           <p className="text-2xl">
             {variant ? (
               <Price min={variant.price} />

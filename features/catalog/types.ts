@@ -6,6 +6,9 @@ export type Category = {
   sortOrder: number;
 };
 
+/** Rata-rata bintang & jumlah ulasan (count 0 = belum ada ulasan). */
+export type RatingSummary = { avg: number; count: number };
+
 export type ProductCardData = {
   id: string;
   slug: string;
@@ -16,6 +19,7 @@ export type ProductCardData = {
   imagePath: string | null;
   /** Estimasi hari kirim bila produk pre-order, selain itu null. */
   preorderDays: number | null;
+  rating: RatingSummary;
 };
 
 export type ProductOption = {
@@ -51,4 +55,5 @@ export type ProductDetail = {
   options: ProductOption[];
   variants: ProductVariant[];
   images: ProductImage[];
+  rating: RatingSummary;
 };

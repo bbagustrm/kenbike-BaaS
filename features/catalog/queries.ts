@@ -93,7 +93,7 @@ export async function listProducts(params: ProductListParams): Promise<ProductLi
     supabase
       .from("product_listings")
       .select(
-        "id, slug, name, category_id, price_min, price_max, image_path, is_preorder, preorder_days",
+        "id, slug, name, category_id, price_min, price_max, image_path, is_preorder, preorder_days, rating_avg, rating_count",
         { count: "exact" },
       ),
     filters,
@@ -138,6 +138,7 @@ export async function listProducts(params: ProductListParams): Promise<ProductLi
       priceMax: row.price_max ?? 0,
       imagePath: row.image_path,
       preorderDays: row.is_preorder ? row.preorder_days : null,
+      rating: { avg: Number(row.rating_avg ?? 0), count: row.rating_count ?? 0 },
     })),
     total,
     page: params.page,
@@ -153,7 +154,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
   const { data, error } = await createPublicClient()
     .from("products")
     .select(
-      `id, slug, name, description, category_id, is_preorder, preorder_days,
+      `id, slug, name, description, category_id, is_preorder, preorder_days, rating_avg, rating_count,
        options:product_options (id, name, sort_order,
          values:product_option_values (id, value, sort_order)),
        variants:product_variants (id, sku, price, weight_gram, length_cm, width_cm, height_cm,
@@ -195,6 +196,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     name: data.name,
     description: data.description,
     preorderDays: data.is_preorder ? data.preorder_days : null,
+    rating: { avg: Number(data.rating_avg), count: data.rating_count },
     breadcrumb,
     options,
     // RLS hanya mengembalikan varian aktif untuk anon. Urut: harga, lalu urutan opsi.
