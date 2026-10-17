@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { Price } from "@/components/shared/price";
+import { formatRating } from "@/components/shared/rating-stars";
 import { Badge } from "@/components/ui/badge";
+import { StarIcon } from "lucide-react";
 
 import type { ProductCardData } from "../types";
 import { ProductImage } from "@/components/shared/product-image";
@@ -43,6 +45,14 @@ export function ProductCard({
           )}
           <Price min={product.priceMin} />
         </p>
+        {product.rating.count > 0 && (
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <StarIcon className="size-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
+            <span className="font-medium text-foreground">{formatRating(product.rating.avg)}</span>
+            <span>({product.rating.count})</span>
+            <span className="sr-only">ulasan</span>
+          </p>
+        )}
       </div>
     </Link>
   );

@@ -12,6 +12,13 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { formatRating } from "@/components/shared/rating-stars";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductView, productListHref } from "@/features/catalog";
 import {
@@ -20,6 +27,7 @@ import {
   listProductSlugs,
 } from "@/features/catalog/queries";
 import type { ProductDetail } from "@/features/catalog";
+import { ProductReviews } from "@/features/reviews";
 import { publicEnv } from "@/lib/env/public";
 import { productImageUrl } from "@/lib/product-images";
 
@@ -82,14 +90,48 @@ async function ProductContent({ slug }: { slug: string }) {
     <div className="space-y-8">
       <ProductBreadcrumb product={product} />
       <ProductView product={product} availabilityPromise={availabilityPromise} />
-      {product.description && (
-        <section className="max-w-3xl space-y-2 border-t pt-8">
-          <h2 className="text-lg font-semibold">Deskripsi</h2>
-          <p className="whitespace-pre-line text-muted-foreground">{product.description}</p>
-        </section>
-      )}
+      <ProductSections product={product} />
       <ProductJsonLd product={product} />
     </div>
+  );
+}
+
+/**
+ * Deskripsi & Ulasan terbuka secara default. Panel yang tertutup tidak dirender
+ * (Base UI), jadi data ulasan baru diambil saat panelnya terbuka. Deskripsi
+ * tetap di-render server agar terbaca mesin pencari.
+ */
+function ProductSections({ product }: { product: ProductDetail }) {
+  const { avg, count } = product.rating;
+  return (
+    <Accordion multiple defaultValue={["description", "reviews"]} className="max-w-3xl border-t">
+      <AccordionItem value="description">
+        <AccordionTrigger className="py-4 text-base font-semibold">Deskripsi</AccordionTrigger>
+        <AccordionContent keepMounted>
+          {product.description ? (
+            <p className="whitespace-pre-line text-muted-foreground">{product.description}</p>
+          ) : (
+            <p className="text-muted-foreground">Belum ada deskripsi.</p>
+          )}
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="reviews" id="ulasan" className="scroll-mt-20">
+        <AccordionTrigger className="py-4 text-base font-semibold">
+          <span>
+            Ulasan
+            {count > 0 && (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                ★ {formatRating(avg)} · {count}
+              </span>
+            )}
+          </span>
+        </AccordionTrigger>
+        {/* Reset margin paragraf bawaan AccordionContent agar jarak antar-ulasan rapat. */}
+        <AccordionContent className="[&_p:not(:last-child)]:mb-0">
+          <ProductReviews productId={product.id} avg={avg} count={count} />
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
 
@@ -139,6 +181,17 @@ function ProductJsonLd({ product }: { product: ProductDetail }) {
       offerCount: product.variants.length,
       url,
     },
+    // Bintang di hasil pencarian Google; hanya bila sudah ada ulasan.
+    aggregateRating:
+      product.rating.count > 0
+        ? {
+            "@type": "AggregateRating",
+            ratingValue: product.rating.avg,
+            reviewCount: product.rating.count,
+            bestRating: 5,
+            worstRating: 1,
+          }
+        : undefined,
   };
   return (
     <script
