@@ -8,6 +8,7 @@ import {
   PackageIcon,
   ReceiptTextIcon,
   SettingsIcon,
+  StarIcon,
   UsersIcon,
   StoreIcon,
 } from "lucide-react";
@@ -35,6 +36,7 @@ const NAV = [
   { href: "/admin/orders", label: "Pesanan", icon: ReceiptTextIcon },
   { href: "/admin/messages", label: "Pesan", icon: MessagesSquareIcon, badge: true },
   { href: "/admin/products", label: "Produk", icon: PackageIcon },
+  { href: "/admin/reviews", label: "Ulasan", icon: StarIcon },
   { href: "/admin/categories", label: "Kategori", icon: FolderTreeIcon },
   { href: "/admin/users", label: "Pengguna", icon: UsersIcon },
   { href: "/admin/settings", label: "Pengaturan toko", icon: SettingsIcon },
