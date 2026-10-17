@@ -172,6 +172,21 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
       `expire-pending-orders` & `cleanup-rate-limits` tanpa kegagalan.
 - [ ] Pengaturan toko: ubah telepon/email → halaman `/contact` ikut berubah.
 
+## 7b. Notifikasi email (#102)
+
+Isi `RESEND_API_KEY` & `MAIL_DEV_TO` (= email akun Resend) di `.env.local`, lalu `bun run email:test`
+→ email uji sampai. Di localhost semua email dialihkan ke `MAIL_DEV_TO` dengan penerima asli di subjek.
+
+- [ ] Admin membalas chat → pembeli mendapat email "Balasan baru dari KenBike"; balasan kedua dalam
+      15 menit tidak mengirim email lagi; bila pembeli sedang membuka chat tidak ada email.
+- [ ] Pembeli mengirim pesan → alert Discord (bila `OPS_DISCORD_WEBHOOK_URL` diisi) / email admin
+      (bila `ADMIN_NOTIFY_EMAIL` diisi).
+- [ ] Batalkan pesanan lunas (pembeli & admin) → email "Pesanan … dibatalkan"; tanpa rekening → ajakan
+      isi rekening.
+- [ ] Selesaikan refund → email "Refund … sudah ditransfer".
+- [ ] Admin membalas ulasan pembeli / menjawab pertanyaan produk → email ke penulisnya.
+- [ ] Tanpa `RESEND_API_KEY`: semua aksi di atas tetap berhasil (email hanya dicatat di log).
+
 ## 8. Kedaluwarsa otomatis
 
 - [ ] Buat pesanan dan biarkan tidak dibayar melewati batas waktunya (atau set `expires_at` pesanan

@@ -2,9 +2,11 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 
 import { assertAdminAction } from "@/features/admin/guard";
+import { notifyAdminNewMessage, notifyChatReply } from "@/features/notifications/notify";
 import type { ActionState } from "@/lib/action-state";
 import { getCurrentUser } from "@/lib/auth/session";
 import { dbErrorMessage } from "@/lib/db-errors";
@@ -57,7 +59,15 @@ export async function sendChatMessage(
     p_attachments: parsed.data.attachments as unknown as Json,
   });
   if (error) return { status: "error", message: dbErrorMessage(error) };
-  return { status: "success", message: toChatMessage(data) };
+  const message = toChatMessage(data);
+  const preview = message.body || "📎 Lampiran";
+  // Setelah respons terkirim: email pembeli (balasan admin) / alert admin (pesan pembeli).
+  after(() =>
+    message.senderRole === "admin"
+      ? notifyChatReply(conversationId, preview)
+      : notifyAdminNewMessage(conversationId, preview),
+  );
+  return { status: "success", message };
 }
 
 /** Muat pesan lebih lama (infinite scroll ke atas). */
@@ -127,6 +137,7 @@ export async function startConversation(input: {
   });
   if (sendError) return { status: "error", message: dbErrorMessage(sendError) };
 
+  after(() => notifyAdminNewMessage(conversation.id, parsed.data.body));
   redirect(`/account/messages/${conversation.id}`);
 }
 

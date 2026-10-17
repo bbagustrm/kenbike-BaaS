@@ -1,6 +1,9 @@
 "use server";
 
+import { after } from "next/server";
 import { z } from "zod";
+
+import { notifyCommentReply } from "@/features/notifications/notify";
 
 import { getCurrentUser } from "@/lib/auth/session";
 import { dbErrorMessage } from "@/lib/db-errors";
@@ -44,6 +47,9 @@ export async function postComment(
     p_parent_id: parentId ?? undefined,
   });
   if (error) return { status: "error", message: dbErrorMessage(error) };
+  if (parentId && user.role === "admin") {
+    after(() => notifyCommentReply(parentId, parsed.data));
+  }
 
   return {
     status: "success",

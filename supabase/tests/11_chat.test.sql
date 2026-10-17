@@ -176,3 +176,33 @@ select pg_temp.check('admin: cari nomor pesanan',
 select pg_temp.eq('admin: limit dihormati',
   (select count(*) from public.admin_list_conversations('all', null, null, 1)), 1::bigint);
 reset role;
+
+-- ------------------------------------------------------------
+-- #102 claim_chat_email (anti-spam notifikasi)
+-- ------------------------------------------------------------
+select pg_temp.login('00000000-0000-0000-0000-0000000000e1');
+set local role authenticated;
+select pg_temp.throws('pembeli tidak bisa mengklaim email',
+  format($$ select public.claim_chat_email(%L, 'customer') $$, pg_temp.ctx('general')), '42501');
+reset role;
+
+-- Pesan admin baru, pembeli belum pernah membaca → boleh kirim sekali.
+update public.conversations
+set customer_last_read_at = now() - interval '1 hour', customer_notified_at = null
+where id = pg_temp.ctx('general');
+set local role service_role;
+insert into public.messages (conversation_id, sender_role, body)
+values (pg_temp.ctx('general'), 'admin', 'Balasan untuk uji email');
+select pg_temp.eq('email pertama boleh dikirim', public.claim_chat_email(pg_temp.ctx('general'), 'customer'), true);
+select pg_temp.eq('email kedua dalam 15 menit ditahan', public.claim_chat_email(pg_temp.ctx('general'), 'customer'), false);
+reset role;
+
+-- Pembeli sedang membuka percakapan → tidak dikirim.
+update public.conversations
+set customer_notified_at = null, customer_last_read_at = now() - interval '30 seconds',
+    last_message_at = now()
+where id = pg_temp.ctx('general');
+set local role service_role;
+select pg_temp.eq('penerima sedang membuka chat → tidak dikirim',
+  public.claim_chat_email(pg_temp.ctx('general'), 'customer'), false);
+reset role;

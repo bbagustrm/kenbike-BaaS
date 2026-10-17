@@ -14,6 +14,7 @@
     "format:check": "prettier --check .",
     "db:push": "supabase db push --linked",
     "db:reset": "supabase db reset --linked",
+    "email:test": "bun --env-file=.env.local scripts/email-test.ts",
     "db:types": "supabase gen types typescript --linked --schema public > types/database.types.ts",
     "db:test": "node scripts/db-test.mjs",
     "db:advisors": "supabase db advisors --linked --type all"

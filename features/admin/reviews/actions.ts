@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh, updateTag } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 
 import {
@@ -8,6 +9,7 @@ import {
   MAX_REVIEW_LENGTH,
   MAX_REVIEW_PHOTOS,
 } from "@/features/reviews/schemas";
+import { notifyReviewReply } from "@/features/notifications/notify";
 import type { ActionState } from "@/lib/action-state";
 import { getCurrentUser } from "@/lib/auth/session";
 import { dbErrorMessage } from "@/lib/db-errors";
@@ -49,6 +51,7 @@ export async function replyReview(reviewId: string, reply: string): Promise<Acti
   });
   if (error) return { status: "error", message: dbErrorMessage(error) };
   await invalidateReviewProducts(reviewId);
+  if (parsed.data) after(() => notifyReviewReply(reviewId, parsed.data));
   refresh();
   return {
     status: "success",
