@@ -36,7 +36,8 @@ export function contentSecurityPolicy({ supabaseUrl, isDev, https }: HeaderOptio
     ],
     "font-src": ["'self'", "data:"],
     "connect-src": ["'self'", supabase.origin, supabaseWs, midtrans],
-    "frame-src": [midtrans],
+    // Video YouTube di deskripsi produk (mode privasi, tanpa cookie pelacak).
+    "frame-src": [midtrans, "https://www.youtube-nocookie.com"],
     // Login Google & redirect auth Supabase bisa terjadi lewat form (tanpa JS).
     "form-action": ["'self'", supabase.origin, "https://accounts.google.com"],
     "frame-ancestors": ["'none'"],
