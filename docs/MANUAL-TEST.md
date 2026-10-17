@@ -145,6 +145,10 @@ Tandai tiap baris: ✅ sesuai, ❌ tidak (catat langkah + screenshot).
 - [ ] Pesanan yang sudah dikirim: tombol **Batalkan & refund** tidak muncul.
 - [ ] **Selesaikan** tanda "Perlu tindakan".
 - [ ] Pengguna: daftar & pencarian tampil.
+- [ ] **Komentar** (admin): badge sidebar = jumlah pertanyaan belum dijawab. Daftar default "Belum
+      dijawab" → **Balas** (muncul berbadge Admin di produk, hilang dari "Belum dijawab").
+      **Sembunyikan** → hilang dari produk, muncul di filter "Disembunyikan"; **Tampilkan** lagi.
+      Hapus balasan / komentar (balasannya ikut terhapus). Filter produk & pencarian.
 - [ ] **Ulasan** (admin): **Tambah ulasan** (produk, nama, tanggal lampau, varian, bintang, teks,
       foto) → muncul di daftar (badge Impor) & di halaman produk dengan tanggal aslinya, rating
       produk berubah. **Balas** → tampil di halaman produk dengan badge Admin; ubah/kosongkan
