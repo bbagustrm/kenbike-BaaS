@@ -4,6 +4,7 @@ import {
   ExternalLinkIcon,
   FolderTreeIcon,
   LayoutDashboardIcon,
+  MessageCircleQuestionIcon,
   MessagesSquareIcon,
   PackageIcon,
   ReceiptTextIcon,
@@ -29,14 +30,21 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { UnansweredCommentsBadge } from "@/features/admin/comments/components/unanswered-badge";
 import { UnreadBadge } from "@/features/chat/components/unread-badge";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboardIcon, exact: true },
   { href: "/admin/orders", label: "Pesanan", icon: ReceiptTextIcon },
-  { href: "/admin/messages", label: "Pesan", icon: MessagesSquareIcon, badge: true },
+  { href: "/admin/messages", label: "Pesan", icon: MessagesSquareIcon, badge: "messages" },
   { href: "/admin/products", label: "Produk", icon: PackageIcon },
   { href: "/admin/reviews", label: "Ulasan", icon: StarIcon },
+  {
+    href: "/admin/comments",
+    label: "Komentar",
+    icon: MessageCircleQuestionIcon,
+    badge: "comments",
+  },
   { href: "/admin/categories", label: "Kategori", icon: FolderTreeIcon },
   { href: "/admin/users", label: "Pengguna", icon: UsersIcon },
   { href: "/admin/settings", label: "Pengaturan toko", icon: SettingsIcon },
@@ -111,7 +119,7 @@ function NavItems({ pathname }: { pathname: string | null }) {
           </SidebarMenuButton>
           {"badge" in item && (
             <SidebarMenuBadge>
-              <UnreadBadge live />
+              {item.badge === "messages" ? <UnreadBadge live /> : <UnansweredCommentsBadge />}
             </SidebarMenuBadge>
           )}
         </SidebarMenuItem>
