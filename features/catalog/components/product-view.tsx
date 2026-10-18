@@ -108,7 +108,7 @@ export function ProductView({ product, availabilityPromise }: ProductViewProps) 
 }
 
 /** Di bawah/sama dengan angka ini stok ditampilkan menonjol ("Stok tinggal N"). */
-const LOW_STOCK_NOTICE = 5;
+const LOW_STOCK_NOTICE = 10;
 
 function PurchaseOptions({
   product,
