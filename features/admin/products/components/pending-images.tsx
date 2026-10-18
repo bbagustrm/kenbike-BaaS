@@ -82,8 +82,8 @@ export function PendingImages({
           Pilih foto
         </Button>
         <p className="text-xs text-muted-foreground">
-          JPG, PNG, atau WebP, maks. 5 MB, hingga {MAX_FILES_PER_UPLOAD} foto. Foto pertama menjadi
-          foto utama. Foto diunggah saat produk dibuat.
+          JPG, PNG, atau WebP, maks. 5 MB, hingga {MAX_FILES_PER_UPLOAD} foto per produk. Foto
+          pertama menjadi foto utama. Foto diunggah saat produk dibuat.
         </p>
       </div>
 

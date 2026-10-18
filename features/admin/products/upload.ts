@@ -5,9 +5,14 @@ import { PRODUCT_IMAGE_BUCKET } from "@/lib/product-images";
 import { createClient } from "@/lib/supabase/client";
 
 import { addProductImages } from "./image-actions";
-import { ALLOWED_IMAGE_TYPES, productImagePath, validateImageFile } from "./images";
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_PRODUCT_IMAGES,
+  productImagePath,
+  validateImageFile,
+} from "./images";
 
-export const MAX_FILES_PER_UPLOAD = 10;
+export const MAX_FILES_PER_UPLOAD = MAX_PRODUCT_IMAGES;
 
 export type UploadItem = File | { file: File; alt?: string; variantId?: string | null };
 

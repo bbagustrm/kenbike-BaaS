@@ -345,7 +345,7 @@ export type Database = {
           price_at_purchase: number
           product_name_snapshot: string
           quantity: number
-          variant_id: string
+          variant_id: string | null
           variant_label_snapshot: string | null
           weight_gram_snapshot: number
         }
@@ -358,7 +358,7 @@ export type Database = {
           price_at_purchase: number
           product_name_snapshot: string
           quantity: number
-          variant_id: string
+          variant_id?: string | null
           variant_label_snapshot?: string | null
           weight_gram_snapshot: number
         }
@@ -371,7 +371,7 @@ export type Database = {
           price_at_purchase?: number
           product_name_snapshot?: string
           quantity?: number
-          variant_id?: string
+          variant_id?: string | null
           variant_label_snapshot?: string | null
           weight_gram_snapshot?: number
         }
@@ -1428,6 +1428,10 @@ export type Database = {
       admin_delete_comment: {
         Args: { p_comment_id: string }
         Returns: undefined
+      }
+      admin_delete_products: {
+        Args: { p_product_ids: string[] }
+        Returns: string[]
       }
       admin_delete_review: { Args: { p_review_id: string }; Returns: undefined }
       admin_get_stock: {

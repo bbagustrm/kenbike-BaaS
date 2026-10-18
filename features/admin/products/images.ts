@@ -1,3 +1,5 @@
+/** Batas foto per produk (juga batas sekali unggah). */
+export const MAX_PRODUCT_IMAGES = 30;
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_IMAGE_TYPES = {
   "image/jpeg": "jpg",

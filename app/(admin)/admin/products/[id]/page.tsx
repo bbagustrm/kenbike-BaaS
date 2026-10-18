@@ -7,6 +7,7 @@ import { z } from "zod";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminPageHeader } from "@/features/admin";
+import { DeleteProductsButton } from "@/features/admin/products/components/delete-products-button";
 import { ImageManager } from "@/features/admin/products/components/image-manager";
 import { ProductForm } from "@/features/admin/products/components/product-form";
 import { StockPanel } from "@/features/admin/products/components/stock-panel";
@@ -29,16 +30,22 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
         title={product.form.name}
         description={product.form.isActive ? "Tampil di toko" : "Nonaktif — tidak tampil di toko"}
         actions={
-          product.form.isActive && (
-            <Link
-              href={`/products/${product.slug}`}
-              target="_blank"
-              className={buttonVariants({ variant: "outline" })}
-            >
-              <ExternalLinkIcon />
-              Lihat di toko
-            </Link>
-          )
+          <>
+            {product.form.isActive && (
+              <Link
+                href={`/products/${product.slug}`}
+                target="_blank"
+                className={buttonVariants({ variant: "outline" })}
+              >
+                <ExternalLinkIcon />
+                Lihat di toko
+              </Link>
+            )}
+            <DeleteProductsButton
+              products={[{ id: product.id, name: product.form.name }]}
+              redirectTo="/admin/products"
+            />
+          </>
         }
       />
 
