@@ -9,7 +9,7 @@ import { formatRating, RatingStars } from "@/components/shared/rating-stars";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { addToCart, MAX_PER_ITEM, setCartDrawerOpen } from "@/features/cart";
+import { addToCart, MAX_PER_ITEM, setCartDrawerOpen, useCartStore } from "@/features/cart";
 import { cn } from "@/lib/utils";
 
 import type { ProductDetail } from "../types";
@@ -107,6 +107,9 @@ export function ProductView({ product, availabilityPromise }: ProductViewProps) 
   );
 }
 
+/** Di bawah/sama dengan angka ini stok ditampilkan menonjol ("Stok tinggal N"). */
+const LOW_STOCK_NOTICE = 5;
+
 function PurchaseOptions({
   product,
   selection,
@@ -123,7 +126,13 @@ function PurchaseOptions({
   const [adding, startAdding] = useTransition();
   const variant = findVariant(product.options, product.variants, selection);
   const stock = variant ? (availability[variant.id] ?? 0) : 0;
-  const maxQuantity = Math.min(stock, MAX_PER_ITEM);
+  // Jumlah yang sudah di keranjang ikut membatasi, agar total tidak melebihi stok.
+  const inCart = useCartStore((s) => {
+    if (!variant) return 0;
+    const items = s.lines ?? s.guestItems;
+    return items.find((item) => item.variantId === variant.id)?.quantity ?? 0;
+  });
+  const maxQuantity = Math.max(0, Math.min(stock, MAX_PER_ITEM) - inCart);
   const clampedQuantity = Math.min(Math.max(quantity, 1), Math.max(maxQuantity, 1));
 
   return (
@@ -174,10 +183,23 @@ function PurchaseOptions({
           <span className="text-muted-foreground">Kombinasi ini tidak tersedia.</span>
         ) : stock <= 0 ? (
           <span className="font-medium text-destructive">Stok habis</span>
-        ) : stock <= 5 ? (
-          <span className="font-medium text-amber-600 dark:text-amber-400">Sisa {stock} unit</span>
         ) : (
-          <span className="text-muted-foreground">Stok tersedia</span>
+          <>
+            {stock <= LOW_STOCK_NOTICE ? (
+              <span className="font-medium text-amber-600 dark:text-amber-400">
+                Stok tinggal {stock}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">Stok: {stock}</span>
+            )}
+            {inCart > 0 && (
+              <span className="text-muted-foreground">
+                {" "}
+                · {inCart} sudah di keranjang
+                {maxQuantity === 0 && " (maksimal)"}
+              </span>
+            )}
+          </>
         )}
       </p>
 
@@ -211,7 +233,7 @@ function PurchaseOptions({
           type="button"
           size="lg"
           className="flex-1"
-          disabled={!variant || stock <= 0 || adding}
+          disabled={!variant || maxQuantity <= 0 || adding}
           onClick={() =>
             variant &&
             startAdding(async () => {

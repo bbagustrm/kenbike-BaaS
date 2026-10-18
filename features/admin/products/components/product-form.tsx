@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { type Control, FormProvider, type UseFormReturn, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -14,7 +14,13 @@ import type { ActionState } from "@/lib/action-state";
 import { saveProduct } from "../actions";
 import { type OptionFormValues, type ProductFormValues, productFormSchema } from "../schemas";
 import { uploadProductImages } from "../upload";
-import { buildVariantRows, comboKey, comboLabel, skuBaseFromSlug } from "../variant-matrix";
+import {
+  buildVariantRows,
+  comboKey,
+  comboLabel,
+  skuBaseFromSlug,
+  suggestSku,
+} from "../variant-matrix";
 import { OptionsEditor } from "./options-editor";
 import { type PendingImage, PendingImages } from "./pending-images";
 import {
@@ -35,10 +41,11 @@ const EMPTY: ProductFormValues = {
   isActive: true,
   isPreorder: false,
   preorderDays: null,
-  weightGram: 1000,
-  lengthCm: 30,
-  widthCm: 20,
-  heightCm: 10,
+  // Pengemasan sengaja kosong: admin wajib mengisi ukuran paket sebenarnya.
+  weightGram: undefined as unknown as number,
+  lengthCm: undefined as unknown as number,
+  widthCm: undefined as unknown as number,
+  heightCm: undefined as unknown as number,
   options: [],
   variants: [],
 };
@@ -82,8 +89,11 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
       if (result.status === "error") toast.error(result.message);
       else toast.success(result.message);
 
-      if (productId || !result.productId) {
+      if (!result.productId) return;
+      if (productId) {
         form.reset(values);
+        // Sebagian stok gagal diubah → tetap di form agar admin bisa melihat & mengulang.
+        if (result.status === "success") router.push("/admin/products");
         return;
       }
       if (newImages.length > 0) {
@@ -106,6 +116,11 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
           toast.error(`Produk dibuat, tetapi foto gagal diunggah: ${upload.message}`);
         }
       }
+      // Halaman tetap hidup di cache router (Activity) — kosongkan agar
+      // "Tambah produk" berikutnya mulai dari form baru.
+      form.reset(EMPTY);
+      setNewImages([]);
+      setSlugEdited(false);
       router.push("/admin/products");
     });
   });
@@ -159,23 +174,35 @@ export function ProductForm({ productId, initial, categories }: ProductFormProps
 /** Susun ulang matriks varian setiap kali opsi berubah (baris lama dipertahankan). */
 function useVariantRowsSync({ control, getValues, setValue }: UseFormReturn<ProductFormValues>) {
   const options = useWatch({ control, name: "options" });
+  const slug = useWatch({ control, name: "slug" });
+  // SKU yang dibuat otomatis (belum diketik admin) ikut diperbarui saat slug/opsi
+  // berubah — mis. baris pertama dibuat ketika slug masih kosong ("KB").
+  const autoSkus = useRef(new Set<string>());
 
   useEffect(() => {
     const current = getValues("variants");
-    const next = buildVariantRows(
-      options ?? [],
-      current,
-      skuBaseFromSlug(getValues("slug")),
-      NEW_VARIANT_DEFAULTS,
-    );
+    const base = skuBaseFromSlug(slug ?? "");
     const valid = completeOptions(options);
+    const typed = new Set(current.map((r) => r.sku));
+    const next = buildVariantRows(options ?? [], current, base, NEW_VARIANT_DEFAULTS).map((row) => {
+      // Baris baru (SKU saran dari buildVariantRows) atau SKU otomatis sebelumnya.
+      const auto = !typed.has(row.sku) || autoSkus.current.has(row.sku);
+      if (row.id || !auto) return row;
+      const sku = suggestSku(base, valid, row.options);
+      autoSkus.current.add(sku);
+      return { ...row, sku };
+    });
     const keys = (rows: typeof current) => rows.map((r) => comboKey(valid, r.options)).join(",");
-    const sameShape =
+    const same =
       next.length === current.length &&
       keys(next) === keys(current) &&
-      next.every((row, i) => JSON.stringify(row.options) === JSON.stringify(current[i]?.options));
-    if (!sameShape) setValue("variants", next, { shouldDirty: true });
-  }, [options, getValues, setValue]);
+      next.every(
+        (row, i) =>
+          row.sku === current[i]?.sku &&
+          JSON.stringify(row.options) === JSON.stringify(current[i]?.options),
+      );
+    if (!same) setValue("variants", next, { shouldDirty: true });
+  }, [options, slug, getValues, setValue]);
 }
 
 /** Pilihan "foto untuk varian" pada produk baru: dikunci per kombinasi opsi. */
