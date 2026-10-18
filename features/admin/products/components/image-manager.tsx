@@ -13,9 +13,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { ProductImage } from "@/components/shared/product-image";
 
 import { deleteProductImage, reorderProductImages, updateProductImage } from "../image-actions";
-import { ALLOWED_IMAGE_TYPES } from "../images";
+import { ALLOWED_IMAGE_TYPES, MAX_PRODUCT_IMAGES } from "../images";
 import type { AdminProductImage, AdminVariantStock } from "../queries";
-import { MAX_FILES_PER_UPLOAD, uploadProductImages } from "../upload";
+import { uploadProductImages } from "../upload";
 
 type ImageManagerProps = {
   productId: string;
@@ -28,9 +28,15 @@ export function ImageManager({ productId, productName, images, variants }: Image
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
+  const remaining = Math.max(0, MAX_PRODUCT_IMAGES - images.length);
 
   const upload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    if (files.length > remaining) {
+      toast.error(`Maksimal ${MAX_PRODUCT_IMAGES} foto per produk — sisa ${remaining} lagi.`);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
     setUploading(true);
     const result = await uploadProductImages(productId, Array.from(files));
     setUploading(false);
@@ -71,15 +77,15 @@ export function ImageManager({ productId, productName, images, variants }: Image
         <Button
           type="button"
           variant="outline"
-          disabled={uploading}
+          disabled={uploading || remaining === 0}
           onClick={() => inputRef.current?.click()}
         >
           {uploading ? <Spinner /> : <ImagePlusIcon />}
           {uploading ? "Mengunggah…" : "Unggah foto"}
         </Button>
         <p className="text-xs text-muted-foreground">
-          JPG, PNG, atau WebP, maks. 5 MB, hingga {MAX_FILES_PER_UPLOAD} file sekaligus. Foto
-          pertama menjadi foto utama.
+          JPG, PNG, atau WebP, maks. 5 MB. {images.length}/{MAX_PRODUCT_IMAGES} foto. Foto pertama
+          menjadi foto utama.
         </p>
         {pending && <Spinner className="ml-auto" />}
       </div>

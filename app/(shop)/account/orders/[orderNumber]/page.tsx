@@ -129,7 +129,7 @@ async function OrderDetail({ orderNumber }: { orderNumber: string }) {
             <CardContent className="space-y-4">
               <ul className="divide-y">
                 {order.items.map((item) => (
-                  <li key={item.variantId} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+                  <li key={item.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
                     <ProductImage
                       path={item.imagePath}
                       alt={item.name}

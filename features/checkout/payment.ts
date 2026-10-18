@@ -122,7 +122,7 @@ export async function preparePayment(
       grossAmount: order.total_amount,
       items: buildSnapItems(
         order.items.map((i) => ({
-          variantId: i.variant_id,
+          variantId: i.variant_id ?? "deleted",
           name: i.product_name_snapshot,
           variantLabel: i.variant_label_snapshot,
           price: i.price_at_purchase,

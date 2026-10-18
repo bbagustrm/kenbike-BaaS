@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { assertAdminAction } from "../guard";
 import { PRODUCT_IMAGE_BUCKET } from "@/lib/product-images";
 
-import { isProductImagePath } from "./images";
+import { isProductImagePath, MAX_PRODUCT_IMAGES } from "./images";
 
 /** variant_id di product_images tidak dibatasi FK ke produk yang sama — cek di sini. */
 async function variantsBelongTo(productId: string, variantIds: (string | null | undefined)[]) {
@@ -44,7 +44,7 @@ const addSchema = z.object({
       }),
     )
     .min(1)
-    .max(10),
+    .max(MAX_PRODUCT_IMAGES),
 });
 
 /** Catat gambar yang sudah diunggah browser ke Storage. */
@@ -68,6 +68,17 @@ export async function addProductImages(input: unknown): Promise<ActionState> {
   }
 
   const supabase = await createClient();
+  const { count: existing } = await supabase
+    .from("product_images")
+    .select("id", { count: "exact", head: true })
+    .eq("product_id", productId);
+  if ((existing ?? 0) + images.length > MAX_PRODUCT_IMAGES) {
+    await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove(images.map((img) => img.path));
+    return {
+      status: "error",
+      message: `Maksimal ${MAX_PRODUCT_IMAGES} foto per produk (sudah ada ${existing ?? 0}).`,
+    };
+  }
   const { data: last } = await supabase
     .from("product_images")
     .select("sort_order")

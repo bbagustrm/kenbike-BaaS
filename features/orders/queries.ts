@@ -86,7 +86,9 @@ export type OrderDetail = {
   courier: { code: string; service: string };
   address: AddressSnapshot;
   items: {
-    variantId: string;
+    id: string;
+    /** null bila produknya sudah dihapus permanen (data diambil dari snapshot). */
+    variantId: string | null;
     name: string;
     variantLabel: string | null;
     imagePath: string | null;
@@ -119,7 +121,7 @@ export async function getMyOrder(orderNumber: string): Promise<OrderDetail | nul
       `id, order_number, created_at, paid_at, expires_at, payment_status, shipping_status,
        subtotal, shipping_cost, total_amount, customer_note, courier_code, courier_service,
        shipping_address_snapshot,
-       items:order_items (variant_id, product_name_snapshot, variant_label_snapshot,
+       items:order_items (id, variant_id, product_name_snapshot, variant_label_snapshot,
          image_url_snapshot, quantity, price_at_purchase, preorder_days_snapshot, created_at),
        payments (status, payment_type, payment_channel, expires_at, created_at),
        shipment:shipments (waybill_id, tracking_url, actual_delivery_date),
@@ -148,6 +150,7 @@ export async function getMyOrder(orderNumber: string): Promise<OrderDetail | nul
     items: [...o.items]
       .sort((a, b) => a.created_at.localeCompare(b.created_at))
       .map((i) => ({
+        id: i.id,
         variantId: i.variant_id,
         name: i.product_name_snapshot,
         variantLabel: i.variant_label_snapshot,

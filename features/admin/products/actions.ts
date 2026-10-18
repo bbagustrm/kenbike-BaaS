@@ -5,6 +5,8 @@ import { z } from "zod";
 
 import type { ActionState } from "@/lib/action-state";
 import { dbErrorMessage } from "@/lib/db-errors";
+import { log } from "@/lib/log";
+import { PRODUCT_IMAGE_BUCKET } from "@/lib/product-images";
 import { createClient } from "@/lib/supabase/server";
 
 import { assertAdminAction } from "../guard";
@@ -108,6 +110,46 @@ export async function setProductActive(productId: string, isActive: boolean): Pr
   invalidateProduct(data.slug);
   refresh();
   return { status: "success", message: isActive ? "Produk diaktifkan." : "Produk dinonaktifkan." };
+}
+
+const deleteSchema = z.array(z.uuid()).min(1).max(100);
+
+/**
+ * Hapus produk permanen (satuan/massal). Ditolak seluruhnya bila ada produk di
+ * pesanan berjalan; riwayat pesanan selesai tetap memakai snapshot.
+ */
+export async function deleteProducts(
+  input: unknown,
+  options: { refreshPage?: boolean } = {},
+): Promise<ActionState> {
+  const denied = await assertAdminAction();
+  if (denied) return denied;
+
+  const parsed = deleteSchema.safeParse(input);
+  if (!parsed.success) return { status: "error", message: "Pilih produk yang akan dihapus." };
+  const ids = [...new Set(parsed.data)];
+
+  const supabase = await createClient();
+  const { data: products } = await supabase.from("products").select("slug").in("id", ids);
+  const { data: paths, error } = await supabase.rpc("admin_delete_products", {
+    p_product_ids: ids,
+  });
+  if (error) return { status: "error", message: dbErrorMessage(error) };
+
+  if (paths && paths.length > 0) {
+    const { error: storageError } = await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove(paths);
+    if (storageError) {
+      log("warn", "products.delete_storage_failed", { message: storageError.message });
+    }
+  }
+
+  invalidateProduct(...(products ?? []).map((p) => p.slug));
+  // Dari halaman ubah produk, klien pindah ke daftar — jangan render ulang halaman yang sudah 404.
+  if (options.refreshPage !== false) refresh();
+  return {
+    status: "success",
+    message: ids.length > 1 ? `${ids.length} produk dihapus.` : "Produk dihapus.",
+  };
 }
 
 const adjustStockSchema = z.object({

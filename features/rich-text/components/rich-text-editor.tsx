@@ -103,7 +103,9 @@ function TiptapEditor({ value, onChange, id, invalid }: RichTextEditorProps) {
         class: cn(richTextClassName, "min-h-48 px-3 py-2 outline-none"),
       },
     },
-    onUpdate: ({ editor }) => onChange(editor.getJSON() as DocNode),
+    // ProseMirror membuat attrs dengan Object.create(null); objek tanpa prototipe
+    // tidak bisa dikirim ke Server Action, jadi salin jadi JSON biasa.
+    onUpdate: ({ editor }) => onChange(JSON.parse(JSON.stringify(editor.getJSON())) as DocNode),
   });
 
   return (
